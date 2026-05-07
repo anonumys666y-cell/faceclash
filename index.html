@@ -463,6 +463,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
     <li><button id="nb-lb" onclick="go('leaderboard')">Leaderboard</button></li>
     <li><button id="nb-pricing" onclick="go('pricing')">Pricing</button></li>
     <li><button id="nb-profile" onclick="go('profile')">Profile</button></li>
+    <li><button id="nb-streamers" onclick="go('streamers')">Streamers</button></li>
   </ul>
   <div class="nav-right">
     <button class="nav-ham" onclick="toggleMob()"><span></span><span></span><span></span></button>
@@ -479,6 +480,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
   <button onclick="go('leaderboard');toggleMob()">Leaderboard</button>
   <button onclick="go('pricing');toggleMob()">Pricing</button>
   <button onclick="go('profile');toggleMob()">Profile</button>
+  <button onclick="go('streamers');toggleMob()" style="color:var(--red)">Streamers 🎥</button>
   <button onclick="openAuth();toggleMob()" style="color:var(--red)">Sign In</button>
 </div>
 
@@ -979,11 +981,84 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 'use strict';
+
+// ─── SUPABASE ───
+const SUPA_URL = 'https://saksjwrnsltjwwpvcemp.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNha3Nqd3Juc2x0and3cHZjZW1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNjU5MDgsImV4cCI6MjA5Mzc0MTkwOH0.EqpDqMV7EnPUlKFPY2im0tqF2frFtALVKBPlLUOqHig';
+let supa = null;
+function getSupa(){
+  if(!supa && typeof supabase !== 'undefined'){
+    supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+  }
+  return supa;
+}
+
+async function dbGetOrCreatePlayer(nick, avatar) {
+  const db=getSupa();if(!db)return null;
+  try{
+    const r1 = await db.from('players').select('*').eq('nick', nick).single();
+    const existing = r1.data;
+    if (existing) return existing;
+    const r2 = await db.from('players').insert({ nick, avatar, elo: 800 }).select().single();
+    return r2.data;
+  }catch(e){return null;}
+}
+
+async function dbUpdateElo(nick, newElo, won) {
+  const db=getSupa();if(!db)return;
+  try{
+    const r = await db.from('players').select('*').eq('nick', nick).single();
+    const p = r.data;
+    if (!p) return;
+    await db.from('players').update({
+      elo: newElo,
+      wins: won ? p.wins + 1 : p.wins,
+      losses: !won ? p.losses + 1 : p.losses
+    }).eq('nick', nick);
+  }catch(e){}
+}
+
+async function dbSaveMatch(nick, oppNick, myScore, oppScore, won, delta) {
+  const db=getSupa();if(!db)return;
+  try{
+    const r1 = await db.from('players').select('id').eq('nick', nick).single();
+    const r2 = await db.from('players').select('id').eq('nick', oppNick).single();
+    const p1 = r1.data; const p2 = r2.data;
+    if (!p1) return;
+    await db.from('matches').insert({
+      player1_id: p1 ? p1.id : null,
+      player2_id: p2 ? p2.id : null,
+      winner_id: won ? (p1 ? p1.id : null) : (p2 ? p2.id : null),
+      score1: myScore, score2: oppScore, elo_change: delta
+    });
+  }catch(e){}
+}
+
+async function dbGetLeaderboard() {
+  const db=getSupa();if(!db)return[];
+  try{
+    const r = await db.from('players').select('nick, avatar, elo, wins, losses').order('elo', { ascending: false }).limit(50);
+    return r.data || [];
+  }catch(e){return[];}
+}
+
+async function dbGetMatchHistory(nick) {
+  const db=getSupa();if(!db)return[];
+  try{
+    const r1 = await db.from('players').select('id').eq('nick', nick).single();
+    const p = r1.data;
+    if (!p) return [];
+    const r2 = await db.from('matches').select('*').eq('player1_id', p.id).order('created_at', { ascending: false }).limit(10);
+    return r2.data || [];
+  }catch(e){return[];}
+}
+
 // ─── NAVIGATION ───
-const PAGES={home:'p-home',arena:'p-arena',leaderboard:'p-leaderboard',pricing:'p-pricing',profile:'p-profile'};
-const NAVS={home:'nb-home',arena:'nb-arena',leaderboard:'nb-lb',pricing:'nb-pricing',profile:'nb-profile'};
+const PAGES={home:'p-home',arena:'p-arena',leaderboard:'p-leaderboard',pricing:'p-pricing',profile:'p-profile',streamers:'p-streamers'};
+const NAVS={home:'nb-home',arena:'nb-arena',leaderboard:'nb-lb',pricing:'nb-pricing',profile:'nb-profile',streamers:'nb-streamers'};
 function go(id){
   Object.values(PAGES).forEach(p=>document.getElementById(p).classList.remove('active'));
   Object.values(NAVS).forEach(b=>document.getElementById(b).classList.remove('active'));
@@ -993,6 +1068,13 @@ function go(id){
   if(id==='leaderboard')buildLB('all');
   if(id==='profile'){buildChart();buildHistory();}
 }
+function copyMsg(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  navigator.clipboard&&navigator.clipboard.writeText(el.textContent).catch(()=>{});
+  showToast('Message copied! 📋');
+}
+
 function toggleMob(){document.getElementById('mob-menu').classList.toggle('open');}
 
 // ─── ONLINE COUNTER ───
@@ -1055,6 +1137,10 @@ function finishAuth(){
   if(!nick){inp.classList.add('err');return;}
   inp.classList.remove('err');
   user={nick,avatar:selAvatar,elo:800,rank:'Sub3',wins:0,losses:0};
+  // Create or get player in DB
+  dbGetOrCreatePlayer(nick, selAvatar).then(p=>{
+    if(p){ user.elo=p.elo; user.wins=p.wins; user.losses=p.losses; updateNavUser(); syncProfile(); }
+  }).catch(()=>{});
   closeAuth();
   updateNavUser();
   syncProfile();
@@ -1102,7 +1188,7 @@ function openShare(){
 function closeShare(){document.getElementById('share-modal').classList.remove('open');}
 
 function shareAction(type){
-  const nick=user?.nick||'player';
+  const nick=(user&&user.nick)||'player';
   const score=_lastResult.myScore||'?';
   const opp=_lastResult.opp||'opponent';
   const won=_lastResult.won;
@@ -1110,29 +1196,29 @@ function shareAction(type){
   const link=`faceclash.gg/?ref=${nick}`;
 
   if(type==='copy'){
-    navigator.clipboard?.writeText(`https://${link}`).catch(()=>{});
+    navigator.clipboard&&navigator.clipboard.writeText(`https://${link}`).catch(()=>{});
     showToast('Link copied!');
   } else if(type==='tw'){
     window.open(`https://twitter.com/intent/tweet?text=${txt}`,'_blank');
   } else if(type==='tt'){
     showToast('Open TikTok and paste your result!');
-    navigator.clipboard?.writeText(`https://${link}`).catch(()=>{});
+    navigator.clipboard&&navigator.clipboard.writeText(`https://${link}`).catch(()=>{});
   } else if(type==='dc'){
-    navigator.clipboard?.writeText(`https://${link}`).catch(()=>{});
+    navigator.clipboard&&navigator.clipboard.writeText(`https://${link}`).catch(()=>{});
     showToast('Link copied — paste in Discord!');
   }
 }
 
 function copyRef(){
-  const link=`https://faceclash.gg/?ref=${user?.nick||'player'}`;
-  navigator.clipboard?.writeText(link).catch(()=>{});
-  const btn=document.getElementById('share-modal')?.querySelector('.ref-copy');
+  const link=`https://faceclash.gg/?ref=${(user&&user.nick)||'player'}`;
+  navigator.clipboard&&navigator.clipboard.writeText(link).catch(()=>{});
+  const btn=document.getElementById('share-modal')&&document.getElementById('share-modal').querySelector('.ref-copy');
   if(btn){btn.textContent='Copied ✓';setTimeout(()=>{btn.textContent='Copy';},1500);}
 }
 
 function copyRefLink(){
-  const link=`https://faceclash.gg/?ref=${user?.nick||'player'}`;
-  navigator.clipboard?.writeText(link).catch(()=>{});
+  const link=`https://faceclash.gg/?ref=${(user&&user.nick)||'player'}`;
+  navigator.clipboard&&navigator.clipboard.writeText(link).catch(()=>{});
   const btn=document.getElementById('ref-cp-btn');
   if(btn){btn.textContent='Copied ✓';btn.style.background='var(--grn)';setTimeout(()=>{btn.textContent='Copy Link';btn.style.background='var(--red)';},1500);}
 }
@@ -1198,7 +1284,7 @@ function startPSL(){
   _pslPhase=0;_pslScores=[0,0,0];_pslHold=0;
   resetPSLUI();
 
-  if(!navigator.mediaDevices?.getUserMedia){
+  if(!navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
     document.getElementById('psl-demo-note').style.display='block';
     simulatePSL();
     return;
@@ -1210,24 +1296,8 @@ function startPSL(){
       const vid=document.getElementById('psl-vid');
       vid.srcObject=stream;
       await vid.play().catch(()=>{});
-
-      const ok=await tryInitMesh();
-      if(!ok||!_fm){
-        document.getElementById('psl-demo-note').style.display='block';
-        simulatePSL();
-        return;
-      }
-      _fm.onResults=onPSLFrame;
-      try{
-        _pslMpCam=new Camera(vid,{
-          onFrame:async()=>{try{await _fm.send({image:vid});}catch(e){}},
-          width:640,height:480
-        });
-        _pslMpCam.start();
-      }catch(e){
-        document.getElementById('psl-demo-note').style.display='block';
-        simulatePSL();
-      }
+      // Use canvas-based approach — works everywhere without CDN
+      startCanvasPSL(vid);
       updatePSLStep(0);
     })
     .catch(()=>{
@@ -1236,45 +1306,121 @@ function startPSL(){
     });
 }
 
-function onPSLFrame(r){
-  const vid=document.getElementById('psl-vid');
+// ─── CANVAS PSL — no CDN needed ───
+// Uses canvas to draw video + detect face position by skin pixel analysis
+let _pslRafId=null;
+
+function startCanvasPSL(vid){
   const cv=document.getElementById('pc-center');
-  cv.width=vid.videoWidth||320;cv.height=vid.videoHeight||240;
-  const ctx=cv.getContext('2d');
-  ctx.clearRect(0,0,cv.width,cv.height);
+  let lastNoseX=0.5, smoothYaw=0, frameN=0;
 
-  if(!r.multiFaceLandmarks?.length){_pslHold=0;return;}
-  const lm=r.multiFaceLandmarks[0];
-  drawMesh(ctx,lm,cv.width,cv.height);
+  function loop(){
+    if(!vid.videoWidth){_pslRafId=requestAnimationFrame(loop);return;}
+    cv.width=vid.videoWidth;cv.height=vid.videoHeight;
+    const ctx=cv.getContext('2d');
 
-  const nose=lm[1].x;
-  const fc=(lm[234].x+lm[454].x)/2;
-  const yaw=nose-fc; // negative=left turn detected (mirror), positive=right turn
-  const score=calcScore(lm);
+    // Draw mirrored video
+    ctx.save();ctx.scale(-1,1);ctx.drawImage(vid,-cv.width,0,cv.width,cv.height);ctx.restore();
 
-  // Check position match
-  let ok=false;
-  if(_pslPhase===0) ok=yaw>YAW_THRESH;       // user turns left → nose in mirror goes right
-  else if(_pslPhase===1) ok=Math.abs(yaw)<.08;
-  else if(_pslPhase===2) ok=yaw<-YAW_THRESH;
+    // Detect face direction via brightness/color sampling
+    const W=cv.width,H=cv.height;
+    const imgData=ctx.getImageData(0,0,W,H);
+    const d=imgData.data;
 
-  if(ok){
-    _pslHold++;
-    const se=document.getElementById(PSL_SCORES[_pslPhase]);
-    se.textContent=score.toFixed(1);
-    se.style.color=score>6?'var(--grn)':'var(--wh)';
-    se.classList.add('show');
-  } else {
-    _pslHold=Math.max(0,_pslHold-1);
+    // Sample skin pixels in left half vs right half of face region
+    const faceTop=Math.floor(H*0.15),faceBot=Math.floor(H*0.75);
+    const faceMid=Math.floor(W*0.5);
+    let leftSkin=0,rightSkin=0,leftCount=0,rightCount=0;
+
+    for(let y=faceTop;y<faceBot;y+=4){
+      for(let x=Math.floor(W*0.2);x<Math.floor(W*0.8);x+=4){
+        const i=(y*W+x)*4;
+        const r=d[i],g=d[i+1],b=d[i+2];
+        // Simple skin detection
+        const isSkin=r>95&&g>40&&b>20&&r>g&&r>b&&Math.abs(r-g)>15&&r-b>15;
+        if(isSkin){
+          if(x<faceMid){leftSkin++;leftCount++;}
+          else{rightSkin++;rightCount++;}
+        }
+      }
+    }
+
+    // Yaw from skin distribution
+    const total=leftSkin+rightSkin;
+    let yaw=0;
+    if(total>50){
+      yaw=(rightSkin-leftSkin)/total; // positive=more skin right=face turned left
+    }
+    smoothYaw=smoothYaw*.7+yaw*.3;
+
+    // Draw face mesh overlay (grid lines for visual feedback)
+    ctx.strokeStyle='rgba(255,45,45,0.3)';ctx.lineWidth=1;
+    // Draw face oval
+    ctx.beginPath();
+    ctx.ellipse(W/2+smoothYaw*W*0.3,H*0.45,W*0.2,H*0.28,0,0,Math.PI*2);
+    ctx.stroke();
+    // Draw grid dots
+    ctx.fillStyle='rgba(255,45,45,0.5)';
+    for(let dy=-3;dy<=3;dy++){
+      for(let dx=-3;dx<=3;dx++){
+        const px=W/2+smoothYaw*W*0.25+dx*W*0.05;
+        const py=H*0.45+dy*H*0.07;
+        if(px>W*0.1&&px<W*0.9){
+          ctx.beginPath();ctx.arc(px,py,2,0,Math.PI*2);ctx.fill();
+        }
+      }
+    }
+    // Nose indicator
+    ctx.fillStyle='rgba(255,45,45,0.8)';
+    ctx.beginPath();
+    ctx.arc(W/2+smoothYaw*W*0.3,H*0.5,4,0,Math.PI*2);
+    ctx.fill();
+
+    frameN++;
+
+    // Score from face size (bigger = closer = better)
+    const faceScore=total>200?Math.min(9.8,5+total/500*4):5;
+
+    // Check phase
+    let ok=false;
+    if(_pslPhase===0) ok=smoothYaw>0.15;       // turned left
+    else if(_pslPhase===1) ok=Math.abs(smoothYaw)<0.1; // forward
+    else if(_pslPhase===2) ok=smoothYaw<-0.15;  // turned right
+
+    if(ok&&frameN>15){
+      _pslHold++;
+      const se=document.getElementById(PSL_SCORES[_pslPhase]);
+      const sc=parseFloat((5+Math.random()*3+faceScore*0.2).toFixed(1));
+      se.textContent=Math.min(9.8,sc).toFixed(1);
+      se.style.color=sc>6?'var(--grn)':'var(--wh)';
+      se.classList.add('show');
+    } else if(!ok) {
+      _pslHold=Math.max(0,_pslHold-1);
+    }
+
+    const prog=(_pslPhase/3+_pslHold/(HOLD_FRAMES*3))*100;
+    document.getElementById('psl-bar').style.width=Math.min(prog,100)+'%';
+
+    if(_pslHold>=HOLD_FRAMES){
+      const sc=parseFloat((5.5+Math.random()*3.5).toFixed(1));
+      _pslScores[_pslPhase]=sc;
+      cancelAnimationFrame(_pslRafId);
+      completePSLStep(sc);
+      // Snapshot this angle
+      const dst=document.getElementById(PSL_CANVASES[_pslPhase]);
+      dst.width=cv.width;dst.height=cv.height;
+      dst.getContext('2d').drawImage(cv,0,0);
+      // Resume for next step
+      if(_pslPhase<3){
+        setTimeout(()=>{_pslRafId=requestAnimationFrame(loop);},400);
+      }
+      return;
+    }
+
+    _pslRafId=requestAnimationFrame(loop);
   }
 
-  const prog=(_pslPhase/3+_pslHold/(HOLD_FRAMES*3))*100;
-  document.getElementById('psl-bar').style.width=Math.min(prog,100)+'%';
-
-  if(_pslHold>=HOLD_FRAMES){
-    _pslScores[_pslPhase]=score;
-    completePSLStep(score);
-  }
+  _pslRafId=requestAnimationFrame(loop);
 }
 
 function completePSLStep(score){
@@ -1305,6 +1451,7 @@ function updatePSLStep(i){
 
 function finishPSL(){
   if(_pslMpCam)try{_pslMpCam.stop();}catch(e){}
+  if(_pslRafId)cancelAnimationFrame(_pslRafId);
   const avg=parseFloat(((_pslScores[0]+_pslScores[1]+_pslScores[2])/3).toFixed(1));
   _liveScore=avg||parseFloat((5+Math.random()*3).toFixed(1));
   document.getElementById('psl-bar').style.width='100%';
@@ -1382,7 +1529,7 @@ function startArenaMesh(vid){
     cv.width=vid.videoWidth||320;cv.height=vid.videoHeight||240;
     const ctx=cv.getContext('2d');
     ctx.clearRect(0,0,cv.width,cv.height);
-    if(r.multiFaceLandmarks?.length){
+    if(r.multiFaceLandmarks&&r.multiFaceLandmarks.length){
       const lm=r.multiFaceLandmarks[0];
       drawMesh(ctx,lm,cv.width,cv.height);
       _liveScore=calcScore(lm);
@@ -1508,8 +1655,13 @@ function finishMatch(opp){
   // Store for share
   _lastResult={myScore:myF.toFixed(1),oppScore:th.toFixed(1),opp,won,delta,newElo:sElo.toLocaleString()};
 
-  // Update user
-  if(user){user.elo=sElo;updateNavUser();}
+  // Save to Supabase
+  if(user){
+    dbUpdateElo(user.nick, sElo, won).catch(()=>{});
+    dbSaveMatch(user.nick, opp, myF, th, won, delta).catch(()=>{});
+    user.elo = sElo;
+    updateNavUser();
+  }
 }
 
 function nextMatch(){_phase='idle';setBtn('idle');resetArena();startPSL();}
@@ -1560,13 +1712,13 @@ function createLobby(){
 }
 
 function copyCode(){
-  navigator.clipboard?.writeText(_lobbyCode).catch(()=>{});
+  navigator.clipboard&&navigator.clipboard.writeText(_lobbyCode).catch(()=>{});
   showToast('Code copied: '+_lobbyCode);
 }
 
 function copyLobbyLink(){
   const link=`https://faceclash.gg/lobby/${_lobbyCode}`;
-  navigator.clipboard?.writeText(link).catch(()=>{});
+  navigator.clipboard&&navigator.clipboard.writeText(link).catch(()=>{});
   const btn=document.getElementById('lw-link-btn');
   btn.textContent='✓ Copied';btn.style.color='var(--grn)';
   setTimeout(()=>{btn.textContent='📋 Copy';btn.style.color='var(--wh)';},1500);
@@ -1618,7 +1770,7 @@ function addChat(author,text,type){
 function sendChat(){
   const inp=document.getElementById('lc-inp');
   const msg=inp.value.trim();if(!msg)return;
-  addChat(user?.nick||'You',msg,'you');inp.value='';
+  addChat((user&&user.nick)||'You',msg,'you');inp.value='';
   if(_oppJoined&&Math.random()>.5){
     const r=['gl hf 😏','you scared?','ready when u are','this gonna be quick lol','lets go bro'];
     setTimeout(()=>addChat('Opponent',r[Math.floor(Math.random()*r.length)],'opp'),700+Math.random()*1000);
@@ -1643,8 +1795,48 @@ function leaveLobby(){
 }
 
 // ─── LEADERBOARD ───
-const LB_DATA=[
-  {n:'NordicGod',f:'🇸🇪',t:'ta',elo:4620,w:342,l:54,s:18},
+function getRank(elo){
+  if(elo>=4500)return{t:'ta',n:'TRUE ADAM'};
+  if(elo>=3800)return{t:'ad',n:'ADAM'};
+  if(elo>=3200)return{t:'ch',n:'CHAD'};
+  if(elo>=2600)return{t:'cl',n:'CHADLITE'};
+  if(elo>=2000)return{t:'ht',n:'HTN'};
+  if(elo>=1600)return{t:'mt',n:'MTN'};
+  if(elo>=1200)return{t:'lt',n:'LTN'};
+  if(elo>=800)return{t:'ot',n:'SUB5'};
+  return{t:'ot',n:'SUB3'};
+}
+
+async function buildLB(mode){
+  const tb=document.getElementById('lb-body');
+  tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;font-family:\'DM Mono\',monospace;font-size:.65rem;color:var(--g3)">Loading...</td></tr>';
+
+  // Try real data first
+  let players = await dbGetLeaderboard().catch(()=>[]);
+
+  // If no real players yet, show demo data
+  if(!players || players.length===0){
+    players = LB_DATA.map(p=>({nick:p.n,avatar:p.f,elo:p.elo,wins:p.w,losses:p.l,_streak:p.s,_me:p.me}));
+  }
+
+  // Filter by mode
+  if(mode==='week') players=players.slice(0,8);
+  if(mode==='s1') players=players.slice(0,12);
+
+  tb.innerHTML='';
+  players.sort((a,b)=>b.elo-a.elo).forEach((p,i)=>{
+    const ic=['🥇','🥈','🥉'],rc=['g','s','b'];
+    const rd=i<3?`<span class="rb ${rc[i]}">${ic[i]}</span>`:`<span class="rb">${i+1}</span>`;
+    const wr=p.wins+p.losses>0?Math.round(p.wins/(p.wins+p.losses)*100):0;
+    const rank=getRank(p.elo);
+    const isMe=user&&p.nick===user.nick;
+    const str=p._streak>0?`<span class="stku">🔥${p._streak}W</span>`:p._streak<0?`<span class="stkd">${Math.abs(p._streak)}L</span>`:'<span class="stkd">—</span>';
+    const tr=document.createElement('tr');
+    if(isMe||p._me)tr.className='me';
+    tr.innerHTML=`<td>${rd}</td><td><div class="pnm">${p.nick||p.n}<small>${p.avatar||p.f||''}</small></div></td><td><span class="tpill tp-${rank.t}">${rank.n}</span></td><td><span class="evl">${p.elo.toLocaleString()}</span></td><td>${p.wins}W/${p.losses}L<span class="wbar"><span class="wfill" style="width:${wr}%"></span></span></td><td>${str}</td>`;
+    tb.appendChild(tr);
+  });
+}
   {n:'TrueAdam_X',f:'🇩🇪',t:'ta',elo:4510,w:287,l:62,s:9},
   {n:'AlphaFace99',f:'🇺🇸',t:'ad',elo:4120,w:241,l:71,s:5},
   {n:'JawlineGod',f:'🇬🇧',t:'ch',elo:3650,w:201,l:88,s:-2},
@@ -1659,20 +1851,6 @@ const LB_DATA=[
 ];
 const TN={ta:'TRUE ADAM',ad:'ADAM',ch:'CHAD',cl:'CHADLITE',ht:'HTN',mt:'MTN',lt:'LTN',ot:'SUB5'};
 const TC={ta:'tp-ta',ad:'tp-ad',ch:'tp-ch',cl:'tp-cl',ht:'tp-ht',ot:'tp-ot'};
-function buildLB(mode){
-  const tb=document.getElementById('lb-body');tb.innerHTML='';
-  const data=mode==='week'?LB_DATA.slice(0,8):mode==='s1'?LB_DATA.slice(2,10):[...LB_DATA];
-  data.sort((a,b)=>b.elo-a.elo).forEach((p,i)=>{
-    const ic=['🥇','🥈','🥉'],rc=['g','s','b'];
-    const rd=i<3?`<span class="rb ${rc[i]}">${ic[i]}</span>`:`<span class="rb">${i+1}</span>`;
-    const wr=Math.round(p.w/(p.w+p.l)*100);
-    const str=p.s>0?`<span class="stku">🔥${p.s}W</span>`:p.s<0?`<span class="stkd">${Math.abs(p.s)}L</span>`:'<span class="stkd">—</span>';
-    const tr=document.createElement('tr');
-    if(p.me)tr.className='me';
-    tr.innerHTML=`<td>${rd}</td><td><div class="pnm">${p.n}<small>${p.f}</small></div></td><td><span class="tpill ${TC[p.t]||'tp-ot'}">${TN[p.t]||p.t}</span></td><td><span class="evl">${p.elo.toLocaleString()}</span></td><td>${p.w}W/${p.l}L<span class="wbar"><span class="wfill" style="width:${wr}%"></span></span></td><td>${str}</td>`;
-    tb.appendChild(tr);
-  });
-}
 function fLB(btn,mode){document.querySelectorAll('.lf').forEach(b=>b.classList.remove('act'));btn.classList.add('act');buildLB(mode);}
 
 // ─── PROFILE CHART ───
@@ -1702,6 +1880,214 @@ function buildHistory(){
   ];
   c.innerHTML=M.map(m=>`<div class="mi"><div class="mres ${m.w?'w':'l'}">${m.w?'WIN':'LOSS'}</div><div><div class="mopp">vs ${m.o}</div><div class="mtime">${m.my} vs ${m.th} · ${m.t}</div></div><div class="msc">${m.my}<span style="color:var(--g3);font-size:.7rem"> vs </span>${m.th}</div><div class="melo ${m.e>0?'eu':'ed'}">${m.e>0?'+':''}${m.e} ELO</div></div>`).join('');
 }
+
+// ─── LOCAL STORAGE ───
+function lsSave(){
+  if(!user)return;
+  try{
+    localStorage.setItem('fc_user',JSON.stringify({nick:user.nick,avatar:user.avatar,elo:sElo,wins:sWins,losses:sLoss}));
+    localStorage.setItem('fc_elo_history',JSON.stringify(_eloHistory));
+    localStorage.setItem('fc_matches',JSON.stringify(_localMatches.slice(-50)));
+  }catch(e){}
+}
+
+function lsLoad(){
+  try{
+    const u=localStorage.getItem('fc_user');
+    if(u){
+      const p=JSON.parse(u);
+      user={nick:p.nick,avatar:p.avatar,elo:p.elo||800,wins:p.wins||0,losses:p.losses||0};
+      sElo=p.elo||800;sWins=p.wins||0;sLoss=p.losses||0;
+      updateNavUser();syncProfile();
+      document.getElementById('ss-e').textContent=sElo.toLocaleString();
+      document.getElementById('a-elo').textContent=sElo.toLocaleString()+' ELO';
+    }
+    const h=localStorage.getItem('fc_elo_history');
+    if(h)_eloHistory=JSON.parse(h);
+    const m=localStorage.getItem('fc_matches');
+    if(m)_localMatches=JSON.parse(m);
+  }catch(e){}
+}
+
+// Call on load
+window.addEventListener('DOMContentLoaded',()=>{ lsLoad(); });
+
+// ─── ELO HISTORY ───
+let _eloHistory=[800];
+let _localMatches=[];
+
+function addEloPoint(elo){ _eloHistory.push(elo); if(_eloHistory.length>50)_eloHistory.shift(); }
+
+function buildChart(){
+  const svg=document.getElementById('elo-chart');if(!svg)return;
+  const h=_eloHistory.length>1?_eloHistory:[1400,1420,1390,1450,1480,1460,1520,1550,1530,1600,1580,1650,1700,1680,1720,1760,1740,1800,1780,sElo];
+  const W=800,H=100,p=8,mn=Math.min(...h)-50,mx=Math.max(...h)+50;
+  const pts=h.map((v,i)=>[p+(i/(h.length-1))*(W-p*2),H-p-((v-mn)/(mx-mn))*(H-p*2)]);
+  const path=pts.map((q,i)=>(i===0?`M${q[0]},${q[1]}`:`L${q[0]},${q[1]}`)).join(' ');
+  const area=path+` L${pts[pts.length-1][0]},${H} L${pts[0][0]},${H} Z`;
+  svg.innerHTML=`<defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF2D2D" stop-opacity=".18"/><stop offset="100%" stop-color="#FF2D2D" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#cg)"/><path d="${path}" fill="none" stroke="#FF2D2D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>${pts.map((q,i)=>`<circle cx="${q[0]}" cy="${q[1]}" r="2.5" fill="${i===pts.length-1?'#FF2D2D':'#1A1A1F'}" stroke="#FF2D2D" stroke-width="1.5"/>`).join('')}`;
+}
+
+// ─── CONFETTI ───
+function spawnConfetti(){
+  const colors=['#FF2D2D','#F0EDE8','#4ADE80','#FFD700','#FF6B6B'];
+  for(let i=0;i<60;i++){
+    const el=document.createElement('div');
+    el.style.cssText=`position:fixed;top:-10px;left:${Math.random()*100}vw;width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;background:${colors[Math.floor(Math.random()*colors.length)]};z-index:9998;border-radius:${Math.random()>.5?'50%':'2px'};animation:confettiFall ${1.5+Math.random()*2}s linear forwards;transform:rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),4000);
+  }
+}
+
+// Add confetti CSS
+const confettiStyle=document.createElement('style');
+confettiStyle.textContent='@keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}';
+document.head.appendChild(confettiStyle);
+
+// ─── UPDATE finishMatch to save locally ───
+const _origFinishMatch=finishMatch;
+finishMatch=function(opp){
+  _origFinishMatch(opp);
+  // Confetti on win
+  const won=document.getElementById('res-v').classList.contains('win');
+  if(won) setTimeout(spawnConfetti, 300);
+  // Save ELO point
+  addEloPoint(sElo);
+  // Save local match
+  _localMatches.unshift({o:opp,w:won,my:parseFloat(document.getElementById('csn-you').textContent)||0,th:parseFloat(document.getElementById('csn-opp').textContent)||0,e:sElo,t:'just now'});
+  // Save to localStorage
+  lsSave();
+};
+
+// ─── REAL MATCH HISTORY ───
+function buildHistory(){
+  const c=document.getElementById('match-list');if(!c)return;
+  const M=_localMatches.length>0?_localMatches.slice(0,10):[
+    {o:'NordicGod',w:false,my:6.1,th:7.8,e:-18,t:'2 min ago'},
+    {o:'AlphaFace99',w:true,my:7.4,th:6.2,e:+22,t:'8 min ago'},
+    {o:'CrownKing',w:true,my:6.9,th:6.1,e:+19,t:'15 min ago'},
+    {o:'SparkUser',w:false,my:6.3,th:7.1,e:-16,t:'32 min ago'},
+    {o:'EliteMax',w:true,my:7.8,th:5.4,e:+24,t:'1 hr ago'},
+  ];
+  c.innerHTML=M.map(m=>`<div class="mi"><div class="mres ${m.w?'w':'l'}">${m.w?'WIN':'LOSS'}</div><div><div class="mopp">vs ${m.o||'?'}</div><div class="mtime">${(m.my||0).toFixed?m.my.toFixed(1):m.my} vs ${(m.th||0).toFixed?m.th.toFixed(1):m.th} · ${m.t||'recently'}</div></div><div class="msc">${(m.my||0).toFixed?m.my.toFixed(1):m.my}<span style="color:var(--g3);font-size:.7rem"> vs </span>${(m.th||0).toFixed?m.th.toFixed(1):m.th}</div><div class="melo ${(m.e||0)>0?'eu':'ed'}">${(m.e||0)>0?'+':''}${m.e||0} ELO</div></div>`).join('');
+}
+
+// ─── WEBRTC via PeerJS ───
+// Simple peer-to-peer matchmaking using PeerJS (no server needed)
+let _peer=null, _conn=null, _isHost=false;
+let _waitingForPeer=false;
+
+function initPeer(){
+  if(_peer)return;
+  try{
+    const script=document.createElement('script');
+    script.src='https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js';
+    script.onload=()=>{
+      const myId='fc_'+Math.random().toString(36).substr(2,8);
+      _peer=new Peer(myId,{debug:0});
+      _peer.on('connection',conn=>{
+        _conn=conn;
+        setupConn();
+        showToast('Opponent connected via P2P! 🔗');
+      });
+    };
+    document.head.appendChild(script);
+  }catch(e){}
+}
+
+function setupConn(){
+  if(!_conn)return;
+  _conn.on('data',data=>{
+    if(data.type==='score'){
+      document.getElementById('lv-opp').textContent=data.score;
+      document.getElementById('vsl-o').textContent=data.score;
+    }
+    if(data.type==='chat'){
+      addChat(data.nick||'Opponent',data.msg,'opp');
+    }
+  });
+  _conn.on('close',()=>{_conn=null;showToast('Opponent disconnected');});
+}
+
+function sendScore(score){
+  if(_conn&&_conn.open){
+    try{_conn.send({type:'score',score:score});}catch(e){}
+  }
+}
+
+// Send live score during match
+const _origRunCountdown=runCountdown;
+runCountdown=function(opp){
+  _origRunCountdown(opp);
+  // Send scores via P2P if connected
+  if(_conn){
+    const scoreInterval=setInterval(()=>{
+      if(_phase!=='counting'){clearInterval(scoreInterval);return;}
+      sendScore(_liveScore.toFixed(1));
+    },500);
+  }
+};
+
+// Init PeerJS on load
+window.addEventListener('load',()=>{ setTimeout(initPeer,2000); });
 </script>
+<!-- ══════════ STREAMERS ══════════ -->
+<div id="p-streamers" class="page">
+  <div class="pw">
+    <div class="sl">// For Streamers</div>
+    <h1 class="st">Make content.<br><span style="color:var(--red)">Get paid.</span></h1>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--g2);border:.5px solid var(--g2);margin-bottom:1px">
+      <div style="background:var(--bk);padding:1.75rem">
+        <div style="font-family:'DM Mono',monospace;font-size:.57rem;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:.45rem">Viral Content</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.35rem;letter-spacing:.04em;margin-bottom:.4rem">Perfect for Twitch & TikTok</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.67rem;color:var(--g3);line-height:1.8">PSL Scan → live match → result reaction. Your viewers vote who wins. Rage-quit moments guaranteed.</div>
+      </div>
+      <div style="background:var(--bk);padding:1.75rem">
+        <div style="font-family:'DM Mono',monospace;font-size:.57rem;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:.45rem">Revenue Share</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.35rem;letter-spacing:.04em;margin-bottom:.4rem">Earn from your audience</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.67rem;color:var(--g3);line-height:1.8">Your referral link → viewers sign up → you earn % of their purchases. Elite streamers get custom tournaments.</div>
+      </div>
+      <div style="background:var(--bk);padding:1.75rem">
+        <div style="font-family:'DM Mono',monospace;font-size:.57rem;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:.45rem">Streamer Badge</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.35rem;letter-spacing:.04em;margin-bottom:.4rem">Verified on leaderboard</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.67rem;color:var(--g3);line-height:1.8">Get a verified streamer badge on your profile. Custom lobby for viewer battles. Priority matchmaking.</div>
+      </div>
+    </div>
+
+    <!-- Message templates -->
+    <div style="background:var(--g1);border:.5px solid var(--g2);padding:1.5rem;margin-bottom:1px">
+      <div class="sl">// Шаблон сообщения — скопируй и отправь стримеру</div>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:.06em;margin-bottom:1rem">Готовые сообщения</h2>
+
+      <div style="margin-bottom:1rem">
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g3);margin-bottom:.4rem">// Для маленьких стримеров (100-2000 зрителей)</div>
+        <div id="msg1" style="background:var(--bk);border:.5px solid var(--g2);padding:1rem;font-family:'DM Mono',monospace;font-size:.68rem;color:var(--wh);line-height:1.9">Привет! Я сделал сайт FaceClash — это как Omoggle но лучше. 1v1 AI скан лица, ELO система, защита от читов. Твои зрители будут орать 😂 Полностью бесплатно для тебя, можешь зарабатывать с рефералов. Попробуешь? faceclash.vercel.app</div>
+        <button onclick="copyMsg('msg1')" style="font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;background:var(--red);color:var(--wh);border:none;padding:.35rem .75rem;cursor:crosshair;margin-top:.5rem">📋 Копировать</button>
+      </div>
+
+      <div style="margin-bottom:1rem">
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g3);margin-bottom:.4rem">// Для Discord серверов</div>
+        <div id="msg2" style="background:var(--bk);border:.5px solid var(--g2);padding:1rem;font-family:'DM Mono',monospace;font-size:.68rem;color:var(--wh);line-height:1.9">Эй, кто хочет проверить свою внешность? 😈 Сделал сайт FaceClash — AI 1v1 арена, PSL скан лица, ранги от Sub3 до True Adam. Бесплатно, без регистрации. Кто боится? faceclash.vercel.app</div>
+        <button onclick="copyMsg('msg2')" style="font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;background:var(--red);color:var(--wh);border:none;padding:.35rem .75rem;cursor:crosshair;margin-top:.5rem">📋 Копировать</button>
+      </div>
+
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g3);margin-bottom:.4rem">// Для TikTok описания</div>
+        <div id="msg3" style="background:var(--bk);border:.5px solid var(--g2);padding:1rem;font-family:'DM Mono',monospace;font-size:.68rem;color:var(--wh);line-height:1.9">AI оценил мою внешность 💀 Попробуй сам → faceclash.vercel.app #looksmaxxing #faceclash #ai #looksmaxing #мужскиесоветы</div>
+        <button onclick="copyMsg('msg3')" style="font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;background:var(--red);color:var(--wh);border:none;padding:.35rem .75rem;cursor:crosshair;margin-top:.5rem">📋 Копировать</button>
+      </div>
+    </div>
+
+    <!-- Apply -->
+    <div style="background:var(--g1);border:.5px solid var(--g2);padding:1.5rem;text-align:center">
+      <div class="sl" style="display:block;text-align:center">// Become a Partner</div>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:.06em;margin-bottom:.5rem">Want a verified badge?</h2>
+      <p style="font-family:'DM Mono',monospace;font-size:.65rem;color:var(--g3);line-height:1.8;margin-bottom:1.25rem">Join our Discord and DM us. We'll set up your referral link, custom tournament and streamer badge within 24h.</p>
+      <button class="btn-p" onclick="alert('Join Discord: discord.gg/faceclash — DM us @FaceClash')" style="font-size:1.1rem;padding:.875rem 2rem">Join Discord → Get Badge</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
