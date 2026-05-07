@@ -13,8 +13,25 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{background:var(--bk);color:var(--wh);font-family:'Syne',sans-serif;overflow-x:hidden;cursor:crosshair;-webkit-font-smoothing:antialiased}
-body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.4}
+body{background:radial-gradient(circle at 50% 20%,rgba(255,30,30,.12),transparent 35%),radial-gradient(circle at 50% 90%,rgba(255,0,0,.10),transparent 35%),#050505;color:var(--wh);font-family:'Syne',sans-serif;overflow-x:hidden;cursor:crosshair;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:42px 42px;opacity:.35;z-index:0}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;background-image:url("https://grainy-gradients.vercel.app/noise.svg");opacity:.08;mix-blend-mode:screen;z-index:1}
+main,header,section{position:relative;z-index:2}
+.red-glow{box-shadow:0 0 18px rgba(255,35,35,.45),0 0 60px rgba(255,35,35,.18)}
+.live-pulse{animation:livePulse 1.2s infinite}
+@keyframes livePulse{0%,100%{opacity:1}50%{opacity:.45}}
+.scan-box{position:relative;overflow:hidden}
+.scan-box::after{content:'';position:absolute;left:0;top:-100%;width:100%;height:40%;background:linear-gradient(to bottom,transparent,rgba(255,0,0,.25),transparent);animation:scanMove 2.8s infinite}
+@keyframes scanMove{0%{top:-50%}100%{top:120%}}
+.arena-btn{background:linear-gradient(90deg,#ff1f1f,#ff3b3b)!important;color:white!important;box-shadow:0 0 40px rgba(255,0,0,.35)!important;animation:btnPulse 1.8s infinite}
+@keyframes btnPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
+.glitch{text-shadow:2px 0 #ff2a2a,-2px 0 #00eaff;animation:glitchA 1.4s infinite}
+@keyframes glitchA{0%,100%{transform:translate(0)}20%{transform:translate(-1px,1px)}40%{transform:translate(1px,-1px)}60%{transform:translate(-1px,0)}}
+.live-panel{position:fixed;right:1.25rem;top:50%;transform:translateY(-50%);background:rgba(10,10,12,.92);border:.5px solid rgba(255,45,45,.3);padding:1rem 1.25rem;z-index:400;min-width:180px;backdrop-filter:blur(8px)}
+.live-panel h3{font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:.75rem;animation:livePulse 1.2s infinite}
+.live-panel p{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--g3);padding:.3rem 0;border-bottom:.5px solid rgba(255,255,255,.05);line-height:1.5}
+.live-panel p:last-child{border-bottom:none}
+@media(max-width:900px){.live-panel{display:none}}
 
 /* ── PAGES ── */
 .page{display:none;min-height:100vh}
@@ -455,6 +472,15 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 <body>
 
 <!-- NAV -->
+<!-- LIVE PANEL -->
+<div class="live-panel" id="live-panel">
+  <h3>● LIVE ACTIVITY</h3>
+  <p id="lp1">xQc just joined</p>
+  <p id="lp2">Kai Cenat is now live</p>
+  <p id="lp3">New match found</p>
+  <p id="lp4">FaceClash AI scanning...</p>
+</div>
+
 <nav>
   <button class="nav-logo" onclick="go('home')">FACE<span>CLASH</span></button>
   <ul class="nav-links">
@@ -590,11 +616,11 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 <div id="p-home" class="page active">
   <section class="hero">
     <div class="opill"><span class="odot"></span><span id="oc">8,241</span> online now</div>
-    <div style="display:inline-flex;align-items:center;gap:.4rem;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g3);border:.5px solid var(--g2);padding:.3rem .75rem;margin-bottom:1.75rem"><span style="width:5px;height:5px;border-radius:50%;background:var(--red);animation:pulse 2s infinite"></span>Live 1v1 AI Face Arena — Season 1</div>
-    <h1 class="htitle"><span class="l1">FACE</span><span class="l2">CLASH</span></h1>
+    <div style="display:inline-flex;align-items:center;gap:.4rem;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g3);border:.5px solid var(--g2);padding:.3rem .75rem;margin-bottom:1.75rem"><span class="live-pulse" style="color:var(--red)">●</span> Live 1v1 AI Face Arena — Season 1</div>
+    <h1 class="htitle glitch"><span class="l1">FACE</span><span class="l2">CLASH</span></h1>
     <p class="hsub">Two faces. One AI. Ten seconds.<br>Climb the ranks. Win or get clashed.</p>
     <div class="hact">
-      <button class="btn-p" onclick="go('arena')">⚔ Enter the Arena</button>
+      <button class="btn-p arena-btn" onclick="go('arena')">⚔ Enter the Arena</button>
       <button class="btn-s" onclick="go('leaderboard')">Leaderboard</button>
     </div>
     <div class="sbar">
@@ -684,7 +710,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 
         <div class="battle">
           <!-- YOU -->
-          <div class="cambox" id="cb-you">
+          <div class="cambox scan-box" id="cb-you">
             <video id="vid-you" autoplay muted playsinline style="display:none"></video>
             <canvas id="cv-you"></canvas>
             <div class="cam-scan" id="scan-you"></div>
@@ -719,7 +745,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
           </div>
 
           <!-- OPP -->
-          <div class="cambox" id="cb-opp">
+          <div class="cambox scan-box" id="cb-opp">
             <div class="cam-scan" id="scan-opp"></div>
             <div class="cam-empty" id="ce-opp">
               <div class="ce-ico">👤</div>
@@ -1837,20 +1863,6 @@ async function buildLB(mode){
     tb.appendChild(tr);
   });
 }
-  {n:'TrueAdam_X',f:'🇩🇪',t:'ta',elo:4510,w:287,l:62,s:9},
-  {n:'AlphaFace99',f:'🇺🇸',t:'ad',elo:4120,w:241,l:71,s:5},
-  {n:'JawlineGod',f:'🇬🇧',t:'ch',elo:3650,w:201,l:88,s:-2},
-  {n:'CrownKing',f:'🇫🇷',t:'ch',elo:3410,w:178,l:91,s:3},
-  {n:'FaceArchitect',f:'🇮🇹',t:'cl',elo:3090,w:143,l:97,s:1},
-  {n:'EliteMax',f:'🇧🇷',t:'cl',elo:2870,w:134,l:101,s:-1},
-  {n:'BlazeWarrior',f:'🇪🇸',t:'ht',elo:2540,w:121,l:89,s:4},
-  {n:'SparkUser',f:'🇨🇦',t:'ot',elo:1960,w:98,l:93,s:2},
-  {n:'xSlayer99 (YOU)',f:'🇷🇺',t:'cl',elo:1823,w:31,l:16,s:2,me:true},
-  {n:'MogWarrior',f:'🇦🇺',t:'ht',elo:2310,w:112,l:105,s:-3},
-  {n:'FadeKing',f:'🇳🇱',t:'ot',elo:1450,w:67,l:88,s:0},
-];
-const TN={ta:'TRUE ADAM',ad:'ADAM',ch:'CHAD',cl:'CHADLITE',ht:'HTN',mt:'MTN',lt:'LTN',ot:'SUB5'};
-const TC={ta:'tp-ta',ad:'tp-ad',ch:'tp-ch',cl:'tp-cl',ht:'tp-ht',ot:'tp-ot'};
 function fLB(btn,mode){document.querySelectorAll('.lf').forEach(b=>b.classList.remove('act'));btn.classList.add('act');buildLB(mode);}
 
 // ─── PROFILE CHART ───
@@ -1880,6 +1892,31 @@ function buildHistory(){
   ];
   c.innerHTML=M.map(m=>`<div class="mi"><div class="mres ${m.w?'w':'l'}">${m.w?'WIN':'LOSS'}</div><div><div class="mopp">vs ${m.o}</div><div class="mtime">${m.my} vs ${m.th} · ${m.t}</div></div><div class="msc">${m.my}<span style="color:var(--g3);font-size:.7rem"> vs </span>${m.th}</div><div class="melo ${m.e>0?'eu':'ed'}">${m.e>0?'+':''}${m.e} ELO</div></div>`).join('');
 }
+
+// ─── LIVE PANEL ANIMATION ───
+const LIVE_MSGS=[
+  'xQc just joined','Kai Cenat is now live','New match found',
+  'FaceClash AI scanning...','NordicGod won a match','True Adam spotted',
+  'BlazeWarrior on win streak 🔥','New player from 🇷🇺 joined',
+  'Match in progress...','1v1 arena heating up','Sub3 player leveled up',
+  'Chadlite challenger appears','AI scoring in progress...','xSlayer99 is online'
+];
+function rotateLivePanel(){
+  const ids=['lp1','lp2','lp3','lp4'];
+  ids.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){
+      setTimeout(()=>{
+        el.style.opacity='0';
+        setTimeout(()=>{
+          el.textContent=LIVE_MSGS[Math.floor(Math.random()*LIVE_MSGS.length)];
+          el.style.opacity='1';
+        },300);
+      },Math.random()*2000);
+    }
+  });
+}
+setInterval(rotateLivePanel,3000);
 
 // ─── LOCAL STORAGE ───
 function lsSave(){
