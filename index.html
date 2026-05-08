@@ -729,6 +729,8 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
                 <text id="t-txt" x="19" y="19" class="ct-txt">10</text>
               </svg>
             </div>
+            <!-- Big countdown overlay on cambox -->
+            <div id="countdown-label" style="position:absolute;bottom:3rem;left:50%;transform:translateX(-50%);font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--red);text-shadow:0 0 20px var(--glow);z-index:16;display:none;letter-spacing:.1em"></div>
           </div>
 
           <!-- VS -->
@@ -1385,7 +1387,7 @@ function drawMesh(ctx,lm,W,H){
 }
 
 // ─── PSL SCAN ───
-let _pslPhase=0,_pslScores=[0,0,0],_pslHold=0,_pslMpCam=null,_pslStream=null;
+let _pslPhase=0,_pslScores=[0,0,0],_pslHold=0,_pslMpCam=null,_pslStream=null,_pslDone=false;
 const PSL_PANELS=['pp-left','pp-center','pp-right'];
 const PSL_CHECKS=['pk-left','pk-center','pk-right'];
 const PSL_SCORES=['ps-left','ps-center','ps-right'];
@@ -1506,7 +1508,7 @@ function startCanvasPSL(vid){
 
     if(ok&&frameN>15){
       _pslHold++;
-      const se=document.getElementById(PSL_SCORES[_pslPhase]);
+      const se=document.getElementById('psl-score-badge');
       const sc=parseFloat((5+Math.random()*3+faceScore*0.2).toFixed(1));
       se.textContent=Math.min(9.8,sc).toFixed(1);
       se.style.color=sc>6?'var(--grn)':'var(--wh)';
@@ -1542,8 +1544,8 @@ function startCanvasPSL(vid){
 
 function completePSLStep(score){
   _pslHold=0;
-  document.getElementById(PSL_PANELS[_pslPhase]).className='psl-panel done'+(_pslPhase===1?' center':'');
-  document.getElementById(PSL_CHECKS[_pslPhase]).classList.add('show');
+  // panel done
+  const co=document.getElementById('psl-check-overlay');if(co){co.style.opacity='1';setTimeout(()=>{if(co)co.style.opacity='0';},500);}
   document.getElementById(PSL_STEPS[_pslPhase]).className='psl-step ok';
   snapshotAngle(_pslPhase);
   _pslPhase++;
@@ -1561,9 +1563,13 @@ function snapshotAngle(i){
 }
 
 function updatePSLStep(i){
-  document.getElementById('psl-instr').textContent=PSL_INSTRS[i];
-  document.getElementById(PSL_STEPS[i]).className='psl-step cur';
-  document.getElementById(PSL_PANELS[i]).className='psl-panel scanning'+(_pslPhase===1?' center':'');
+  // Update instruction
+  const instrEl=document.getElementById('psl-instr');
+  if(instrEl)instrEl.textContent=['TURN LEFT ←','LOOK FORWARD','TURN RIGHT →'][i]||'';
+  // Update step bars
+  ['pst-0','pst-1','pst-2'].forEach((id,idx)=>{const e=document.getElementById(id);if(e)e.style.background=idx<i?'var(--grn)':idx===i?'var(--red)':'var(--g2)';});
+  ['pst-0','pst-1','pst-2'].forEach((id,idx)=>{const e=document.getElementById(id);if(e)e.style.background=idx<i?'var(--grn)':idx===i?'var(--red)':'var(--g2)';});
+  const sb=document.getElementById('psl-scanbar-main');if(sb)sb.style.display='block';
 }
 
 function finishPSL(){
@@ -1572,7 +1578,7 @@ function finishPSL(){
   const avg=parseFloat(((_pslScores[0]+_pslScores[1]+_pslScores[2])/3).toFixed(1));
   _liveScore=avg||parseFloat((5+Math.random()*3).toFixed(1));
   document.getElementById('psl-bar').style.width='100%';
-  document.getElementById('psl-instr').textContent='✅ SCAN COMPLETE';
+  const instrFin=document.getElementById('psl-instr');if(instrFin)instrFin.textContent='SCAN COMPLETE ✓';
   const fs=document.getElementById('psl-fscore');
   fs.textContent=_liveScore.toFixed(1);
   fs.style.color=_liveScore>6?'var(--grn)':'var(--wh)';
@@ -1614,7 +1620,7 @@ function simulatePSL(){
     document.getElementById('psl-cd').textContent=cd;
     const ci=setInterval(()=>{
       cd--;
-      document.getElementById('psl-cd').textContent=cd>0?cd:'';
+      const cdEl=document.getElementById('psl-cd');if(cdEl)cdEl.textContent=cd>0?cd:'';
       if(cd<=0){
         clearInterval(ci);
         _pslScores[step]=parseFloat((5+Math.random()*4).toFixed(1));
@@ -1628,13 +1634,11 @@ function simulatePSL(){
 }
 
 function completePSLStepSim(i){
-  document.getElementById(PSL_PANELS[i]).className='psl-panel done'+(i===1?' center':'');
+  // panel done
   document.getElementById(PSL_CHECKS[i]).classList.add('show');
-  document.getElementById(PSL_STEPS[i]).className='psl-step ok';
-  const se=document.getElementById(PSL_SCORES[i]);
-  se.textContent=_pslScores[i].toFixed(1);
-  se.style.color=_pslScores[i]>6?'var(--grn)':'var(--wh)';
-  se.classList.add('show');
+  const dEl=document.getElementById(PSL_STEPS[i]);if(dEl)dEl.style.background='var(--grn)';
+  const badge=document.getElementById('psl-score-badge');
+  if(badge){badge.textContent=_pslScores[i].toFixed(1);badge.style.color=_pslScores[i]>6?'var(--grn)':'var(--wh)';badge.style.opacity='1';setTimeout(()=>{if(badge)badge.style.opacity='0';},800);}
   document.getElementById('psl-bar').style.width=((i+1)/3*100)+'%';
 }
 
@@ -1706,6 +1710,7 @@ function runCountdown(opp){
   document.getElementById('cb-you').classList.add('pulsing');
   document.getElementById('cb-opp').classList.add('pulsing');
   document.getElementById('cam-timer').style.display='block';
+  document.getElementById('countdown-label').style.display='block';
   document.getElementById('scan-you').style.display='block';
   document.getElementById('scan-opp').style.display='block';
   const arc=document.getElementById('t-arc');
@@ -1714,6 +1719,8 @@ function runCountdown(opp){
   _timerT=setInterval(()=>{
     t--;txt.textContent=t;
     arc.style.strokeDashoffset=(94/10)*(10-t);
+    const cntEl=document.getElementById('countdown-label');
+    if(cntEl)cntEl.textContent=t>0?t+'':'';
     // Update vs bar
     if(_liveScore>0){
       const pct=Math.min(100,Math.max(0,(_liveScore-3)/7*100));
@@ -1728,6 +1735,8 @@ function finishMatch(opp){
   document.getElementById('cb-you').classList.remove('pulsing');
   document.getElementById('cb-opp').classList.remove('pulsing');
   document.getElementById('cam-timer').style.display='none';
+  document.getElementById('countdown-label').style.display='none';
+  document.getElementById('countdown-label').textContent='';
   document.getElementById('scan-you').style.display='none';
   document.getElementById('scan-opp').style.display='none';
 
@@ -1781,7 +1790,7 @@ function finishMatch(opp){
   }
 }
 
-function nextMatch(){_phase='idle';setBtn('idle');resetArena();startPSL();}
+function nextMatch(){_phase='ready';setBtn('ready');resetArena();}
 
 function resetArena(){
   document.getElementById('result').classList.remove('show');
