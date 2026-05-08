@@ -1900,20 +1900,19 @@ function joinLobby(){
   document.getElementById('join-inp').style.borderColor='var(--g2)';
   _lobbyCode=code;
   showWaitRoom('join');
-  setTimeout(()=>oppJoined('xChad_01',1650+Math.floor(Math.random()*400)),1200);
+  // Waiting for real opponent to join with code...
 }
 
 function showWaitRoom(mode){
   const lw=document.getElementById('lw');lw.classList.add('show');
-  document.getElementById('lw-title').textContent=mode==='create'?'// Waiting for opponent...':'// Joining lobby...';
+  document.getElementById('lw-title').textContent=mode==='create'?'// Waiting for friend to join...':'// Joining lobby...';
   const u=user||{nick:'You',avatar:'😤',elo:sElo};
   document.getElementById('lwp-av-you').textContent=u.avatar;
   document.getElementById('lwp-nm-you').textContent=u.nick;
   document.getElementById('lwp-elo-you').textContent=(u.elo||sElo).toLocaleString()+' ELO';
   addChat('System','Lobby '+_lobbyCode+' ready!','sys');
-  if(mode==='create'){
-    setTimeout(()=>oppJoined(OPP_NAMES[Math.floor(Math.random()*OPP_NAMES.length)],1600+Math.floor(Math.random()*500)),2500+Math.random()*3000);
-  }
+  addChat('System','Share the code with your friend. No bots here!','sys');
+  // No bots in private lobby - real friend must join with code
 }
 
 function oppJoined(name,elo){
@@ -2141,9 +2140,11 @@ const confettiStyle=document.createElement('style');
 confettiStyle.textContent='@keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}';
 document.head.appendChild(confettiStyle);
 
-// ─── UPDATE finishMatch to save locally ───
+// ─── UPDATE finishMatch to save locally + P2P ───
 const _origFinishMatch=finishMatch;
 finishMatch=function(opp){
+  // Send result to P2P friend
+  if(_conn&&_conn.open){sendToFriend({type:'result',score:_liveScore.toFixed(1)});}
   _origFinishMatch(opp);
   // Confetti on win
   const won=document.getElementById('res-v').classList.contains('win');
@@ -2165,64 +2166,142 @@ function buildHistory(){
   c.innerHTML=M.map(m=>`<div class="mi"><div class="mres ${m.w?'w':'l'}">${m.w?'WIN':'LOSS'}</div><div><div class="mopp">vs ${m.o||'?'}</div><div class="mtime">${(m.my||0).toFixed?m.my.toFixed(1):m.my} vs ${(m.th||0).toFixed?m.th.toFixed(1):m.th} · ${m.t||'recently'}</div></div><div class="msc">${(m.my||0).toFixed?m.my.toFixed(1):m.my}<span style="color:var(--g3);font-size:.7rem"> vs </span>${(m.th||0).toFixed?m.th.toFixed(1):m.th}</div><div class="melo ${(m.e||0)>0?'eu':'ed'}">${(m.e||0)>0?'+':''}${m.e||0} ELO</div></div>`).join('');
 }
 
-// ─── WEBRTC via PeerJS ───
-// Simple peer-to-peer matchmaking using PeerJS (no server needed)
-let _peer=null, _conn=null, _isHost=false;
-let _waitingForPeer=false;
+// ─── PEERJS REAL FRIEND MATCH ───
+let _peer=null,_conn=null,_peerReady=false,_isHost=false;
+let _peerScript=false;
 
-function initPeer(){
-  if(_peer)return;
-  try{
-    const script=document.createElement('script');
-    script.src='https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js';
-    script.onload=()=>{
-      const myId='fc_'+Math.random().toString(36).substr(2,8);
-      _peer=new Peer(myId,{debug:0});
-      _peer.on('connection',conn=>{
-        _conn=conn;
-        setupConn();
-        showToast('Opponent connected via P2P! 🔗');
-      });
-    };
-    document.head.appendChild(script);
-  }catch(e){}
+function loadPeerJS(cb){
+  if(window.Peer){cb();return;}
+  if(_peerScript){setTimeout(()=>loadPeerJS(cb),300);return;}
+  _peerScript=true;
+  const s=document.createElement('script');
+  s.src='https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js';
+  s.onload=cb;
+  s.onerror=()=>showToast('PeerJS failed to load');
+  document.head.appendChild(s);
 }
 
-function setupConn(){
-  if(!_conn)return;
-  _conn.on('data',data=>{
+function initPeer(onReady){
+  loadPeerJS(()=>{
+    if(_peer){onReady&&onReady(_peer.id);return;}
+    const id='fc'+Math.random().toString(36).substr(2,8);
+    _peer=new Peer(id,{debug:0});
+    _peer.on('open',()=>{
+      _peerReady=true;
+      onReady&&onReady(_peer.id);
+    });
+    _peer.on('connection',conn=>{
+      // Friend joined our lobby
+      _conn=conn;_isHost=true;
+      setupP2PConn(conn);
+    });
+    _peer.on('error',e=>{showToast('Connection error: '+e.type);});
+  });
+}
+
+function setupP2PConn(conn){
+  conn.on('open',()=>{
+    // Friend connected!
+    const nick=user?user.nick:'Friend';
+    const elo=sElo;
+    conn.send({type:'hello',nick,elo});
+    showToast('🔗 Friend connected!');
+    // Update lobby UI
+    document.getElementById('lw-title').textContent='// Friend connected! Ready?';
+    document.getElementById('lobby-start').style.display='inline-block';
+    addChat('System','Friend connected via P2P!','sys');
+  });
+  conn.on('data',data=>{
+    if(data.type==='hello'){
+      // Friend introduced themselves
+      oppJoined(data.nick||'Friend',data.elo||800);
+      conn.send({type:'hello',nick:user?user.nick:'You',elo:sElo});
+    }
     if(data.type==='score'){
-      document.getElementById('lv-opp').textContent=data.score;
-      document.getElementById('vsl-o').textContent=data.score;
+      // Real opponent score!
+      const el=document.getElementById('lv-opp');
+      const vsl=document.getElementById('vsl-o');
+      if(el)el.textContent=data.score;
+      if(vsl)vsl.textContent=data.score;
+    }
+    if(data.type==='result'){
+      // Opponent's final score
+      _oppFinalScore=parseFloat(data.score)||5;
     }
     if(data.type==='chat'){
-      addChat(data.nick||'Opponent',data.msg,'opp');
+      addChat(data.nick||'Friend',data.msg,'opp');
+    }
+    if(data.type==='start'){
+      // Host started match
+      switchMode('ranked');
+      if(_phase==='idle')startPSL();
+      else findMatchP2P();
     }
   });
-  _conn.on('close',()=>{_conn=null;showToast('Opponent disconnected');});
+  conn.on('close',()=>{
+    _conn=null;
+    showToast('Friend disconnected');
+  });
 }
 
-function sendScore(score){
-  if(_conn&&_conn.open){
-    try{_conn.send({type:'score',score:score});}catch(e){}
-  }
+// Create lobby with real P2P code
+function createLobby(){
+  initPeer((peerId)=>{
+    _lobbyCode=peerId.replace('fc','').toUpperCase().substr(0,6);
+    // Store mapping
+    _peerIdFull=peerId;
+    document.getElementById('lobby-code').textContent=_lobbyCode;
+    document.getElementById('lw-link-code').textContent=_lobbyCode;
+    showWaitRoom('create');
+  });
 }
 
-// Send live score during match
-const _origRunCountdown=runCountdown;
-runCountdown=function(opp){
-  _origRunCountdown(opp);
-  // Send scores via P2P if connected
-  if(_conn){
-    const scoreInterval=setInterval(()=>{
-      if(_phase!=='counting'){clearInterval(scoreInterval);return;}
-      sendScore(_liveScore.toFixed(1));
-    },500);
+// Join lobby with friend's code
+function joinLobby(){
+  const inp=document.getElementById('join-inp');
+  const code=inp?inp.value.trim().toUpperCase():'';
+  if(code.length<4){if(inp)inp.style.borderColor='var(--red)';return;}
+  if(inp)inp.style.borderColor='var(--g2)';
+  addChat('System','Connecting to lobby...','sys');
+  initPeer(()=>{
+    // Connect to host's peer
+    const hostId='fc'+code.toLowerCase();
+    const conn=_peer.connect(hostId,{reliable:true});
+    _conn=conn;_isHost=false;
+    setupP2PConn(conn);
+    _lobbyCode=code;
+    showWaitRoom('join');
+  });
+}
+
+// Send live score to friend during match
+let _oppFinalScore=0;
+function sendToFriend(data){
+  if(_conn&&_conn.open){try{_conn.send(data);}catch(e){}}
+}
+
+// P2P score sending - integrated into existing overrides above
+
+let _peerIdFull='';
+
+// Lobby start - tell friend to start too
+function startLobbyMatch(){
+  addChat('System','Match starting in 3...','sys');
+  sendToFriend({type:'start'});
+  let c=3;
+  const ci=setInterval(()=>{c--;if(c>0)addChat('System',c+'...','sys');else{clearInterval(ci);switchMode('ranked');if(_phase==='idle')startPSL();else findMatch();}},1000);
+}
+
+// Send chat to friend
+const _origSendChat=sendChat;
+sendChat=function(){
+  const inp=document.getElementById('lc-inp');
+  const msg=inp?inp.value.trim():'';
+  if(msg&&_conn&&_conn.open){
+    sendToFriend({type:'chat',nick:user?user.nick:'You',msg});
   }
+  _origSendChat();
 };
-
-// Init PeerJS on load
-window.addEventListener('load',()=>{ setTimeout(initPeer,2000); });
 </script>
 <!-- ══════════ STREAMERS ══════════ -->
 <div id="p-streamers" class="page">
