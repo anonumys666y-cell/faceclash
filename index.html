@@ -171,8 +171,8 @@ nav{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-
 .psl-panel{flex:1;position:relative;background:#08080B;border:.5px solid var(--g2);overflow:hidden;border-radius:2px;transition:border-color .4s,box-shadow .4s;aspect-ratio:3/4}
 .psl-panel.center{flex:1.35}
 .psl-panel video,.psl-panel canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.psl-panel video{transform:scaleX(-1)}
-.psl-panel canvas{transform:scaleX(-1);pointer-events:none}
+.psl-panel video{transform:scaleX(1)}
+.psl-panel canvas{transform:scaleX(1);pointer-events:none}
 .psl-panel.scanning{border-color:var(--red);box-shadow:0 0 20px rgba(255,45,45,.2)}
 .psl-panel.done{border-color:var(--grn);box-shadow:0 0 12px rgba(74,222,128,.15)}
 .psl-panel.waiting{opacity:.4}
@@ -230,8 +230,8 @@ nav{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-
 .cambox{position:relative;background:#08080B;border:.5px solid var(--g2);overflow:hidden;border-radius:2px;aspect-ratio:3/4;transition:border-color .4s,box-shadow .4s}
 .cambox.hot{border-color:rgba(255,45,45,.5);box-shadow:inset 0 0 0 1px rgba(255,45,45,.1)}
 .cambox.pulsing{animation:glowPulse 2s ease infinite}
-.cambox video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
-.cambox canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;transform:scaleX(-1)}
+.cambox video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(1)}
+.cambox canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;transform:scaleX(1)}
 /* empty */
 .cam-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;text-align:center;padding:1rem;transition:opacity .3s}
 .ce-ico{font-size:2.5rem;opacity:.1}
@@ -475,8 +475,8 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 <!-- LIVE PANEL -->
 <div class="live-panel" id="live-panel">
   <h3>● LIVE ACTIVITY</h3>
-  <p id="lp1">xQc just joined</p>
-  <p id="lp2">Kai Cenat is now live</p>
+  <p id="lp1">New player joined</p>
+  <p id="lp2">Match in progress...</p>
   <p id="lp3">New match found</p>
   <p id="lp4">FaceClash AI scanning...</p>
 </div>
@@ -620,10 +620,10 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
       <button class="btn-s" onclick="go('leaderboard')">Leaderboard</button>
     </div>
     <div class="sbar">
-      <div class="stat"><div class="sn" id="stat-matches"><span class="r">0</span></div><div class="slb">Matches</div></div>
-      <div class="stat"><div class="sn" id="stat-players"><span class="r">0</span></div><div class="slb">Players</div></div>
-      <div class="stat"><div class="sn">10<span class="r">s</span></div><div class="slb">Per match</div></div>
-      <div class="stat"><div class="sn"><span class="r">468</span></div><div class="slb">Landmarks</div></div>
+      <div class="stat"><div class="sn" id="stat-matches"><span class="r">0</span></div><div class="slb">Matches played</div></div>
+      <div class="stat"><div class="sn" id="stat-players"><span class="r">0</span></div><div class="slb">Players ranked</div></div>
+      <div class="stat"><div class="sn">10<span class="r">s</span></div><div class="slb">Seconds per match</div></div>
+      <div class="stat"><div class="sn"><span class="r">468</span></div><div class="slb">Face points scanned</div></div>
     </div>
   </section>
   <div class="pw" style="padding-top:1.5rem">
@@ -1392,8 +1392,8 @@ const PSL_SCORES=['ps-left','ps-center','ps-right'];
 const PSL_CANVASES=['pc-left','pc-center','pc-right'];
 const PSL_STEPS=['pst-0','pst-1','pst-2'];
 const PSL_INSTRS=['Turn your head ← LEFT','Look straight FORWARD','Turn your head RIGHT →'];
-const HOLD_FRAMES=20;
-const YAW_THRESH=0.15;
+const HOLD_FRAMES=40;
+const YAW_THRESH=0.25;
 
 function startPSL(){
   document.getElementById('psl-screen').classList.add('open');
@@ -2041,11 +2041,11 @@ function buildHistory(){
 
 // ─── LIVE PANEL ANIMATION ───
 const LIVE_MSGS=[
-  'xQc just joined','Kai Cenat is now live','New match found',
-  'FaceClash AI scanning...','NordicGod won a match','True Adam spotted',
-  'BlazeWarrior on win streak 🔥','New player from 🇷🇺 joined',
+  'New player joined','Match in progress...','New match found',
+  'FaceClash AI scanning...','Player ranked up','True Adam spotted',
+  'Win streak detected 🔥','New player from 🇷🇺 joined',
   'Match in progress...','1v1 arena heating up','Sub3 player leveled up',
-  'Chadlite challenger appears','AI scoring in progress...','xSlayer99 is online'
+  'Chadlite challenger appears','AI scoring in progress...','New player online'
 ];
 function rotateLivePanel(){
   const ids=['lp1','lp2','lp3','lp4'];
