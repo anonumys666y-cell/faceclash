@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>FACECLASH — 1v1 Face Arena</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -517,10 +517,21 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
       <div class="modal-sl">// Sign in</div>
       <div class="modal-title">Join FaceClash</div>
       <div class="modal-sub">Sign in to save your ELO, rank and match history.<br>Guests can play but won't earn a rank.</div>
-      <button class="google-btn" onclick="authGoogle()">
-        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-        Continue with Google
-      </button>
+      <!-- Real Google Sign-In button -->
+      <div id="g_id_onload"
+        data-client_id="453279507642-1hecdod6uud03f9qn0ucaipkivjtt2vv.apps.googleusercontent.com"
+        data-callback="handleGoogleSignIn"
+        data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin"
+        data-type="standard"
+        data-size="large"
+        data-theme="filled_black"
+        data-text="continue_with"
+        data-shape="rectangular"
+        data-logo_alignment="left"
+        data-width="340">
+      </div>
       <button class="guest-btn" onclick="authGuest()">Play as Guest (no rank saved)</button>
     </div>
     <!-- Step 2 -->
@@ -575,7 +586,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
       <div class="psl-angle">← Left</div>
     </div>
     <div class="psl-panel center waiting" id="pp-center">
-      <video id="psl-vid" autoplay muted playsinline></video>
+      <video id="psl-vid" autoplay muted playsinline webkit-playsinline></video>
       <canvas id="pc-center"></canvas>
       <div class="psl-scanbar"></div>
       <div class="psl-check" id="pk-center">✅</div>
@@ -708,7 +719,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
         <div class="battle">
           <!-- YOU -->
           <div class="cambox scan-box" id="cb-you">
-            <video id="vid-you" autoplay muted playsinline style="display:none"></video>
+            <video id="vid-you" autoplay muted playsinline webkit-playsinline style="display:none"></video>
             <canvas id="cv-you"></canvas>
             <div class="cam-scan" id="scan-you"></div>
             <div class="cam-empty" id="ce-you">
@@ -1073,6 +1084,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 'use strict';
 
@@ -1182,6 +1194,32 @@ function setPill(s){
   txt.textContent=labels[s]||'Idle';
 }
 
+// ─── GOOGLE AUTH ───
+const GOOGLE_CLIENT_ID = '453279507642-1hecdod6uud03f9qn0ucaipkivjtt2vv.apps.googleusercontent.com';
+
+function handleGoogleSignIn(response) {
+  // Decode JWT token from Google
+  try {
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const googleUser = {
+      google_id: payload.sub,
+      nick: payload.name || payload.email.split('@')[0],
+      avatar: '😤',
+      email: payload.email,
+      picture: payload.picture
+    };
+    // Show step 2 with pre-filled name
+    document.getElementById('auth-s1').style.display = 'none';
+    document.getElementById('auth-s2').style.display = 'block';
+    const nickInp = document.getElementById('nick-inp');
+    if(nickInp) nickInp.value = googleUser.nick;
+    // Store google data for later
+    window._googleUser = googleUser;
+  } catch(e) {
+    showToast('Google sign-in error. Try again.');
+  }
+}
+
 // ─── AUTH ───
 const AVATARS=['😤','😎','🥷','👾','🤖','💀','🔥','⚡','🦁','🐺','🦊','👑','🌑','⚔️','🎭','🧊','💎','🏆'];
 let user=null, selAvatar='😤';
@@ -1222,11 +1260,19 @@ function finishAuth(){
   const inp=document.getElementById('nick-inp');
   if(!nick){inp.classList.add('err');return;}
   inp.classList.remove('err');
-  user={nick,avatar:selAvatar,elo:800,rank:'Sub3',wins:0,losses:0};
+  const googleData = window._googleUser || {};
+  user={
+    nick, 
+    avatar: selAvatar||'😤',
+    elo:800, rank:'Sub3', wins:0, losses:0,
+    google_id: googleData.google_id||null,
+    email: googleData.email||null
+  };
   // Create or get player in DB
-  dbGetOrCreatePlayer(nick, selAvatar).then(p=>{
+  dbGetOrCreatePlayer(nick, selAvatar||'😤').then(p=>{
     if(p){ user.elo=p.elo; user.wins=p.wins; user.losses=p.losses; updateNavUser(); syncProfile(); }
   }).catch(()=>{});
+  window._googleUser = null;
   closeAuth();
   updateNavUser();
   syncProfile();
@@ -1390,7 +1436,7 @@ function startPSL(){
     return;
   }
 
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false})
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:480},height:{ideal:640}},audio:false})
     .then(async stream=>{
       _pslStream=stream;
       const vid=document.getElementById('psl-vid');
@@ -1640,7 +1686,7 @@ function startArenaMesh(vid){
       let skinCount=0;
       for(let i=0;i<d.length;i+=16){
         const r=d[i],g=d[i+1],b=d[i+2];
-        if(r>80&&g>40&&b>20&&r>g&&r>b)skinCount++;
+        if(r>60&&g>30&&b>15&&r>g&&r>b&&(r-b)>10)skinCount++;
       }
       const total=d.length/16;
       const skinRatio=skinCount/total;
