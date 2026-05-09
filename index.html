@@ -1531,26 +1531,45 @@ function startPSL(){
     });
 }
 
-// ─── CANVAS PSL — real face detection required ───
+// ─── CANVAS PSL — real face + motion detection ───
 let _pslRafId=null;
 let _pslTimerInterval=null;
-const PSL_STEP_SECS=5;
-let _pslFaceTime=0; // seconds face has been detected this step
-let _pslNoFaceStreak=0;
+const PSL_STEP_SECS=4; // 4 steps x 4 sec each
+const PSL_TOTAL_STEPS=4;
+let _pslFaceTime=0;
+let _prevFrameData=null; // for motion detection
 
 function detectFace(ctx, W, H){
-  // Sample skin pixels in center face region
   try{
-    const img=ctx.getImageData(Math.floor(W*0.25),Math.floor(H*0.15),Math.floor(W*0.5),Math.floor(H*0.65));
+    const img=ctx.getImageData(Math.floor(W*0.2),Math.floor(H*0.1),Math.floor(W*0.6),Math.floor(H*0.75));
     const d=img.data;
     let skin=0,total=0;
-    for(let i=0;i<d.length;i+=12){
+    for(let i=0;i<d.length;i+=8){
       const r=d[i],g=d[i+1],b=d[i+2];
-      if(r>60&&g>30&&b>15&&r>g&&r>b&&(r-b)>15&&(r-g)<80)skin++;
+      if(r>60&&g>30&&b>15&&r>g&&r>b&&(r-b)>15&&(r-g)<90)skin++;
       total++;
     }
     return skin/total;
   }catch(e){return 0;}
+}
+
+function detectMotion(ctx, W, H){
+  // Compare current frame with previous — detects live video vs static photo
+  try{
+    const img=ctx.getImageData(Math.floor(W*0.15),Math.floor(H*0.1),Math.floor(W*0.7),Math.floor(H*0.8));
+    const d=img.data;
+    if(!_prevFrameData||_prevFrameData.length!==d.length){
+      _prevFrameData=new Uint8ClampedArray(d);
+      return true; // first frame — assume motion
+    }
+    let diff=0,count=0;
+    for(let i=0;i<d.length;i+=16){
+      diff+=Math.abs(d[i]-_prevFrameData[i])+Math.abs(d[i+1]-_prevFrameData[i+1])+Math.abs(d[i+2]-_prevFrameData[i+2]);
+      count++;
+    }
+    _prevFrameData=new Uint8ClampedArray(d);
+    return (diff/count)>3; // >3 avg pixel change = live
+  }catch(e){return true;}
 }
 
 function startCanvasPSL(vid){
@@ -1603,44 +1622,44 @@ function startCanvasPSL(vid){
 function runPSLStepTimer(vid, cv){
   if(_pslTimerInterval)clearInterval(_pslTimerInterval);
   _pslFaceTime=0;
-  let displaySecs=PSL_STEP_SECS;
-  const cdEl=document.getElementById('psl-cd');
-  if(cdEl){cdEl.textContent=displaySecs;cdEl.style.color='var(--red)';}
-  document.getElementById('psl-bar').style.width=(_pslPhase/3*100)+'%';
+  _prevFrameData=null;
+  document.getElementById('psl-bar').style.width=(_pslPhase/PSL_TOTAL_STEPS*100)+'%';
+  const instrs=['ALIGN FACE','LOOK FORWARD','TURN YOUR HEAD','HOLD STILL'];
+  const instr=document.getElementById('psl-instr');
+  if(instr)instr.textContent=instrs[_pslPhase]||'SCANNING...';
 
   _pslTimerInterval=setInterval(()=>{
-    // Check face detection from current canvas frame
     const cv2=document.getElementById('pc-center');
-    let faceOk=false;
+    const errEl=document.getElementById('psl-error');
+    let faceOk=false, motionOk=false;
     if(cv2&&cv2.width>0){
       const ctx2=cv2.getContext('2d');
       const skinRatio=detectFace(ctx2,cv2.width,cv2.height);
-      faceOk=skinRatio>0.08;
+      faceOk=skinRatio>0.06;
+      motionOk=detectMotion(ctx2,cv2.width,cv2.height);
     }
+    const liveOk=faceOk&&motionOk;
 
-    const errEl2=document.getElementById('psl-error');
-    if(faceOk){
+    if(liveOk){
       _pslFaceTime++;
-      displaySecs=Math.max(0,PSL_STEP_SECS-_pslFaceTime);
-      if(cdEl){cdEl.textContent=displaySecs>0?displaySecs:'✓';cdEl.style.color=displaySecs<=2?'var(--grn)':'var(--red)';}
-      if(errEl2)errEl2.textContent='';
+      if(errEl)errEl.textContent='';
+      if(instr)instr.style.color='var(--grn)';
     } else {
-      if(cdEl){cdEl.textContent=displaySecs;cdEl.style.color='var(--red)';}
-      if(errEl2)errEl2.textContent='NO FACE DETECTED — position your face in frame';
+      if(instr)instr.style.color='var(--wh)';
+      if(!faceOk&&errEl)errEl.textContent='NO FACE DETECTED — move closer';
+      else if(!motionOk&&errEl)errEl.textContent='STATIC IMAGE DETECTED — use real camera';
     }
 
-    // Progress bar
-    const prog=(_pslPhase/3+Math.min(_pslFaceTime,PSL_STEP_SECS)/(PSL_STEP_SECS*3))*100;
+    const prog=(_pslPhase/PSL_TOTAL_STEPS+Math.min(_pslFaceTime,PSL_STEP_SECS)/(PSL_STEP_SECS*PSL_TOTAL_STEPS))*100;
     document.getElementById('psl-bar').style.width=Math.min(prog,100)+'%';
 
     if(_pslFaceTime>=PSL_STEP_SECS){
       clearInterval(_pslTimerInterval);
-      // Score based on skin ratio quality
       const sc=parseFloat((6+Math.random()*3.2).toFixed(1));
-      _pslScores[_pslPhase]=sc;
-      // Snapshot
+      _pslScores[Math.min(_pslPhase,2)]=sc;
       if(cv2){
-        const dst=document.getElementById(PSL_CANVASES[_pslPhase]);
+        const idx=Math.min(_pslPhase,PSL_CANVASES.length-1);
+        const dst=document.getElementById(PSL_CANVASES[idx]);
         if(dst){dst.width=cv2.width;dst.height=cv2.height;dst.getContext('2d').drawImage(cv2,0,0);}
       }
       completePSLStep(sc);
@@ -1649,13 +1668,10 @@ function runPSLStepTimer(vid, cv){
 }
 function completePSLStep(score){
   _pslHold=0;
-  const co=document.getElementById('psl-check-overlay');if(co){co.style.opacity='1';setTimeout(()=>{if(co)co.style.opacity='0';},500);}
-  document.getElementById(PSL_STEPS[_pslPhase]).className='psl-step ok';
-  snapshotAngle(_pslPhase);
+  if(PSL_STEPS[_pslPhase])document.getElementById(PSL_STEPS[_pslPhase]).className='psl-step ok';
   _pslPhase++;
-  document.getElementById('psl-bar').style.width=(_pslPhase/3*100)+'%';
-  if(_pslPhase<3){
-    updatePSLStep(_pslPhase);
+  document.getElementById('psl-bar').style.width=(_pslPhase/PSL_TOTAL_STEPS*100)+'%';
+  if(_pslPhase<PSL_TOTAL_STEPS){
     setTimeout(()=>runPSLStepTimer(),400);
   } else {
     finishPSL();
@@ -2422,7 +2438,7 @@ function initPeer(onReady){
   loadPeerJS(()=>{
     if(_peer){onReady&&onReady(_peer.id);return;}
     const id='fc'+Math.random().toString(36).substr(2,8);
-    _peer=new Peer(id,{debug:0});
+    _peer=new Peer(id,{debug:0,config:{iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]}});
     _peer.on('open',()=>{
       _peerReady=true;
       onReady&&onReady(_peer.id);
@@ -2529,10 +2545,27 @@ async function joinLobby(){
 
   addChat('System','Connecting to host...','sys');
   initPeer(()=>{
-    const conn=_peer.connect(hostPeerId,{reliable:true});
-    _conn=conn;_isHost=false;
-    conn.on('error',e=>{addChat('System','Connection failed: '+e,'sys');showToast('Could not connect to lobby');});
-    setupP2PConn(conn);
+    let retries=0;
+    function tryConnect(){
+      const conn=_peer.connect(hostPeerId,{reliable:true,serialization:'json'});
+      _conn=conn;_isHost=false;
+      let connected=false;
+      conn.on('open',()=>{connected=true;});
+      conn.on('error',e=>{
+        addChat('System','Retrying connection...','sys');
+        if(retries++<3)setTimeout(tryConnect,1500);
+        else{addChat('System','Could not connect. Ask host to regenerate code.','sys');showToast('Connection failed');}
+      });
+      setupP2PConn(conn);
+      // Timeout if no connection in 8s
+      setTimeout(()=>{
+        if(!connected&&_conn===conn){
+          addChat('System','Connection timed out. Try again.','sys');
+          showToast('Lobby connection timed out');
+        }
+      },8000);
+    }
+    tryConnect();
   });
 }
 
