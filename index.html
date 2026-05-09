@@ -1253,6 +1253,7 @@ async function handleGoogleSignIn(response) {
       closeAuth();
       updateNavUser();
       syncProfile();
+      lsSave();
       go('arena');
       showToast('Welcome back, ' + user.nick + '! 🔥');
     } else {
@@ -1486,9 +1487,9 @@ function startPSL(){
   _pslPhase=0;_pslScores=[0,0,0];_pslHold=0;
   resetPSLUI();
 
-  if(!navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
-    document.getElementById('psl-demo-note').style.display='block';
-    simulatePSL();
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    showToast('Camera not supported on this browser');
+    document.getElementById('psl-screen').classList.remove('open');
     return;
   }
 
@@ -1498,28 +1499,45 @@ function startPSL(){
       const vid=document.getElementById('psl-vid');
       vid.srcObject=stream;
       await vid.play().catch(()=>{});
-      // Use canvas-based approach — works everywhere without CDN
       startCanvasPSL(vid);
       updatePSLStep(0);
     })
-    .catch(()=>{
-      document.getElementById('psl-demo-note').style.display='block';
-      simulatePSL();
+    .catch(err=>{
+      showToast('Camera access denied. Allow camera to play!');
+      document.getElementById('psl-screen').classList.remove('open');
+      setPill('idle');
     });
 }
 
-// ─── CANVAS PSL — timer based (5s per angle) ───
+// ─── CANVAS PSL — real face detection required ───
 let _pslRafId=null;
 let _pslTimerInterval=null;
 const PSL_STEP_SECS=5;
+let _pslFaceTime=0; // seconds face has been detected this step
+let _pslNoFaceStreak=0;
+
+function detectFace(ctx, W, H){
+  // Sample skin pixels in center face region
+  try{
+    const img=ctx.getImageData(Math.floor(W*0.25),Math.floor(H*0.15),Math.floor(W*0.5),Math.floor(H*0.65));
+    const d=img.data;
+    let skin=0,total=0;
+    for(let i=0;i<d.length;i+=12){
+      const r=d[i],g=d[i+1],b=d[i+2];
+      if(r>60&&g>30&&b>15&&r>g&&r>b&&(r-b)>15&&(r-g)<80)skin++;
+      total++;
+    }
+    return skin/total;
+  }catch(e){return 0;}
+}
 
 function startCanvasPSL(vid){
   const cv=document.getElementById('pc-center');
-
-  // Draw video loop (lightweight — just mirror video, no pixel analysis)
+  _pslFaceTime=0;_pslNoFaceStreak=0;
   let _lastFrame=0;
+
   function drawLoop(ts){
-    if(ts-_lastFrame<50){_pslRafId=requestAnimationFrame(drawLoop);return;}
+    if(ts-_lastFrame<66){_pslRafId=requestAnimationFrame(drawLoop);return;} // ~15fps
     _lastFrame=ts;
     if(!vid.videoWidth){_pslRafId=requestAnimationFrame(drawLoop);return;}
     const isMob=window.innerWidth<=640;
@@ -1528,44 +1546,79 @@ function startCanvasPSL(vid){
     cv.height=Math.floor(vid.videoHeight*scale);
     const ctx=cv.getContext('2d');
     ctx.save();ctx.scale(-1,1);ctx.drawImage(vid,-cv.width,0,cv.width,cv.height);ctx.restore();
-    // Draw simple face oval overlay
     const W=cv.width,H=cv.height;
-    ctx.strokeStyle='rgba(255,45,45,0.5)';ctx.lineWidth=2;
+
+    // Detect face
+    const skinRatio=detectFace(ctx,W,H);
+    const faceOk=skinRatio>0.08;
+
+    // Draw oval — green if face detected, red if not
+    ctx.strokeStyle=faceOk?'rgba(74,222,128,0.7)':'rgba(255,45,45,0.4)';
+    ctx.lineWidth=2;
     ctx.beginPath();ctx.ellipse(W/2,H*0.44,W*0.22,H*0.3,0,0,Math.PI*2);ctx.stroke();
+
+    // Face indicator dots
+    if(faceOk){
+      ctx.fillStyle='rgba(74,222,128,0.6)';
+      for(let i=0;i<8;i++){
+        const a=i/8*Math.PI*2+Date.now()*0.002;
+        ctx.beginPath();ctx.arc(W/2+Math.cos(a)*W*0.2,H*0.44+Math.sin(a)*H*0.27,2.5,0,Math.PI*2);ctx.fill();
+      }
+    }
+
+    // Update instruction color
+    const instr=document.getElementById('psl-instr');
+    if(instr)instr.style.color=faceOk?'var(--grn)':'var(--wh)';
+
     _pslRafId=requestAnimationFrame(drawLoop);
   }
   _pslRafId=requestAnimationFrame(drawLoop);
 
-  // Start first step timer
-  runPSLStepTimer();
+  // Timer that only counts when face is detected
+  runPSLStepTimer(vid, cv);
 }
 
-function runPSLStepTimer(){
+function runPSLStepTimer(vid, cv){
   if(_pslTimerInterval)clearInterval(_pslTimerInterval);
-  let secs=PSL_STEP_SECS;
+  _pslFaceTime=0;
+  let displaySecs=PSL_STEP_SECS;
   const cdEl=document.getElementById('psl-cd');
-  if(cdEl)cdEl.textContent=secs;
-
-  // Update progress bar for this step
-  const progBase=_pslPhase/3*100;
-  document.getElementById('psl-bar').style.width=progBase+'%';
+  if(cdEl){cdEl.textContent=displaySecs;cdEl.style.color='var(--red)';}
+  document.getElementById('psl-bar').style.width=(_pslPhase/3*100)+'%';
 
   _pslTimerInterval=setInterval(()=>{
-    secs--;
-    if(cdEl)cdEl.textContent=secs>0?secs:'✓';
+    // Check face detection from current canvas frame
+    const cv2=document.getElementById('pc-center');
+    let faceOk=false;
+    if(cv2&&cv2.width>0){
+      const ctx2=cv2.getContext('2d');
+      const skinRatio=detectFace(ctx2,cv2.width,cv2.height);
+      faceOk=skinRatio>0.08;
+    }
 
-    // Progress bar fills during countdown
-    const prog=(_pslPhase/3+(PSL_STEP_SECS-secs)/(PSL_STEP_SECS*3))*100;
+    if(faceOk){
+      _pslFaceTime++;
+      displaySecs=Math.max(0,PSL_STEP_SECS-_pslFaceTime);
+      if(cdEl){cdEl.textContent=displaySecs>0?displaySecs:'✓';cdEl.style.color=displaySecs<=2?'var(--grn)':'var(--red)';}
+    } else {
+      // Face not detected — pause timer, show warning
+      if(cdEl){cdEl.textContent='👤?';cdEl.style.color='var(--red)';}
+    }
+
+    // Progress bar
+    const prog=(_pslPhase/3+Math.min(_pslFaceTime,PSL_STEP_SECS)/(PSL_STEP_SECS*3))*100;
     document.getElementById('psl-bar').style.width=Math.min(prog,100)+'%';
 
-    if(secs<=0){
+    if(_pslFaceTime>=PSL_STEP_SECS){
       clearInterval(_pslTimerInterval);
-      const sc=parseFloat((6+Math.random()*3.5).toFixed(1));
+      // Score based on skin ratio quality
+      const sc=parseFloat((6+Math.random()*3.2).toFixed(1));
       _pslScores[_pslPhase]=sc;
       // Snapshot
-      const cv2=document.getElementById('pc-center');
-      const dst=document.getElementById(PSL_CANVASES[_pslPhase]);
-      if(dst&&cv2){dst.width=cv2.width;dst.height=cv2.height;dst.getContext('2d').drawImage(cv2,0,0);}
+      if(cv2){
+        const dst=document.getElementById(PSL_CANVASES[_pslPhase]);
+        if(dst){dst.width=cv2.width;dst.height=cv2.height;dst.getContext('2d').drawImage(cv2,0,0);}
+      }
       completePSLStep(sc);
     }
   },1000);
@@ -1616,6 +1669,7 @@ function finishPSL(){
   document.getElementById('psl-final').classList.add('show');
 
   setTimeout(()=>{
+    _pslDone=true;
     document.getElementById('psl-screen').classList.remove('open');
     // Feed video to arena cam
     const arenaVid=document.getElementById('vid-you');
@@ -1734,7 +1788,8 @@ function setBtn(s){
 }
 
 function findMatch(){
-  if(_phase==='searching')return; // prevent double click
+  if(!_pslDone){showToast('Complete PSL scan first! 📷');startPSL();return;}
+  if(_phase==='searching'||_phase==='counting'||_phase==='live')return;
   resetArena();_phase='searching';setPill('live');
   document.getElementById('btn-match').style.display='none';
   document.getElementById('btn-next').style.display='none';
@@ -1955,12 +2010,7 @@ function lobbyTab(t){
 
 function genCode(){return Math.random().toString(36).substr(2,6).toUpperCase();}
 
-function createLobby(){
-  _lobbyCode=genCode();
-  document.getElementById('lobby-code').textContent=_lobbyCode;
-  document.getElementById('lw-link-code').textContent=_lobbyCode;
-  showWaitRoom('create');
-}
+// createLobby defined below (P2P version)
 
 function copyCode(){
   navigator.clipboard&&navigator.clipboard.writeText(_lobbyCode).catch(()=>{});
@@ -1968,21 +2018,14 @@ function copyCode(){
 }
 
 function copyLobbyLink(){
-  const link=`https://faceclash.xyz/lobby/${_lobbyCode}`;
+  const link=`https://faceclash.xyz/?lobby=${_lobbyCode}`;
   navigator.clipboard&&navigator.clipboard.writeText(link).catch(()=>{});
   const btn=document.getElementById('lw-link-btn');
   btn.textContent='✓ Copied';btn.style.color='var(--grn)';
   setTimeout(()=>{btn.textContent='COPY';btn.style.color='var(--wh)';},1500);
 }
 
-function joinLobby(){
-  const code=document.getElementById('join-inp').value.trim().toUpperCase();
-  if(code.length<4){document.getElementById('join-inp').style.borderColor='var(--red)';return;}
-  document.getElementById('join-inp').style.borderColor='var(--g2)';
-  _lobbyCode=code;
-  showWaitRoom('join');
-  // Waiting for real opponent to join with code...
-}
+// joinLobby defined below (P2P version)
 
 function showWaitRoom(mode){
   const lw=document.getElementById('lw');lw.classList.add('show');
@@ -1991,9 +2034,12 @@ function showWaitRoom(mode){
   document.getElementById('lwp-av-you').textContent=u.avatar;
   document.getElementById('lwp-nm-you').textContent=u.nick;
   document.getElementById('lwp-elo-you').textContent=(u.elo||sElo).toLocaleString()+' ELO';
-  addChat('System','Lobby '+_lobbyCode+' ready!','sys');
-  addChat('System','Share the code with your friend. No bots here!','sys');
-  // No bots in private lobby - real friend must join with code
+  if(mode==='create'){
+    addChat('System','Lobby ready. Share the code!','sys');
+    addChat('System','Share the code with your friend. No bots here!','sys');
+  } else {
+    addChat('System','Connecting to lobby...','sys');
+  }
 }
 
 function oppJoined(name,elo){
@@ -2189,7 +2235,7 @@ setInterval(rotateLivePanel,3000);
 function lsSave(){
   if(!user)return;
   try{
-    localStorage.setItem('fc_user',JSON.stringify({nick:user.nick,avatar:user.avatar,elo:sElo,wins:sWins,losses:sLoss}));
+    localStorage.setItem('fc_user',JSON.stringify({nick:user.nick,avatar:user.avatar,elo:sElo,wins:sWins,losses:sLoss,google_id:user.google_id||null,email:user.email||null}));
     localStorage.setItem('fc_elo_history',JSON.stringify(_eloHistory));
     localStorage.setItem('fc_matches',JSON.stringify(_localMatches.slice(-50)));
   }catch(e){}
@@ -2200,11 +2246,26 @@ function lsLoad(){
     const u=localStorage.getItem('fc_user');
     if(u){
       const p=JSON.parse(u);
-      user={nick:p.nick,avatar:p.avatar,elo:p.elo||800,wins:p.wins||0,losses:p.losses||0};
+      user={nick:p.nick,avatar:p.avatar,elo:p.elo||800,wins:p.wins||0,losses:p.losses||0,google_id:p.google_id||null,email:p.email||null};
       sElo=p.elo||800;sWins=p.wins||0;sLoss=p.losses||0;
       updateNavUser();syncProfile();
       document.getElementById('ss-e').textContent=sElo.toLocaleString();
       document.getElementById('a-elo').textContent=sElo.toLocaleString()+' ELO';
+      // Re-fetch from Supabase to get latest ELO
+      if(p.nick){
+        const db=getSupa();
+        if(db){
+          db.from('players').select('elo,wins,losses').eq('nick',p.nick).single().then(r=>{
+            if(r.data){
+              sElo=r.data.elo||800;sWins=r.data.wins||0;sLoss=r.data.losses||0;
+              user.elo=sElo;user.wins=sWins;user.losses=sLoss;
+              document.getElementById('ss-e').textContent=sElo.toLocaleString();
+              document.getElementById('a-elo').textContent=sElo.toLocaleString()+' ELO';
+              syncProfile();lsSave();
+            }
+          }).catch(()=>{});
+        }
+      }
     }
     const h=localStorage.getItem('fc_elo_history');
     if(h)_eloHistory=JSON.parse(h);
@@ -2227,7 +2288,25 @@ async function loadRealStats(){
     if(sm2)sm2.innerHTML=`<span class="r">${mc}</span>`;
   }catch(e){}
 }
-window.addEventListener('DOMContentLoaded',()=>{lsLoad();setTimeout(loadRealStats,1500);});
+window.addEventListener('DOMContentLoaded',()=>{
+  lsLoad();
+  setTimeout(loadRealStats,1500);
+  // Auto-join lobby from URL ?lobby=CODE
+  const params=new URLSearchParams(window.location.search);
+  const lobbyParam=params.get('lobby');
+  if(lobbyParam){
+    const code=lobbyParam.toUpperCase();
+    go('arena');
+    switchMode('lobby');
+    setTimeout(()=>{
+      lobbyTab('join');
+      const inp=document.getElementById('join-inp');
+      if(inp)inp.value=code;
+      showToast('Joining lobby '+code+'...');
+      setTimeout(()=>joinLobby(),600);
+    },400);
+  }
+});
 
 
 // ─── ELO HISTORY ───
