@@ -160,7 +160,7 @@ nav{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-
 .hcta p{font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g3);margin-bottom:2rem;position:relative;z-index:1}
 
 /* ══ PSL SCAN ══ */
-.psl-screen{display:none;position:fixed;inset:0;background:var(--bk);z-index:200;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto}
+.psl-screen{display:none;position:fixed;inset:0;background:var(--bk);z-index:200;flex-direction:column;align-items:center;justify-content:flex-start;padding:1rem;overflow-y:auto;padding-top:max(1rem,env(safe-area-inset-top))}
 .psl-screen.open{display:flex}
 .psl-logo{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.15em;color:var(--g3);margin-bottom:.25rem;text-align:center}
 .psl-logo span{color:var(--red)}
@@ -461,6 +461,12 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
   .psl-panel.center{flex:1}
   .psl-panel{aspect-ratio:4/3}
   .psl-steps{gap:.3rem}
+  /* 2v2 mobile: stack teams vertically */
+  #panel-2v2 .ranked-wrap > div[style*="grid-template-columns:1fr 60px 1fr"]{
+    display:flex!important;flex-direction:column!important;gap:.75rem
+  }
+  #panel-2v2 .vs-col{flex-direction:row;justify-content:center;padding:.25rem 0}
+  #panel-2v2 [id^="cb2-"]{aspect-ratio:16/9!important}
 }
 @media(min-width:641px) and (max-width:960px){
   .steps{grid-template-columns:1fr 1fr}
@@ -1498,9 +1504,18 @@ function startCanvasPSL(vid){
   const cv=document.getElementById('pc-center');
   let lastNoseX=0.5, smoothYaw=0, frameN=0;
 
-  function loop(){
+  let _lastFrame=0;
+  function loop(ts){
+    // Throttle to ~15fps on mobile to prevent freeze
+    const isMob=window.innerWidth<=640;
+    const minGap=isMob?66:33;
+    if(ts-_lastFrame<minGap){_pslRafId=requestAnimationFrame(loop);return;}
+    _lastFrame=ts;
     if(!vid.videoWidth){_pslRafId=requestAnimationFrame(loop);return;}
-    cv.width=vid.videoWidth;cv.height=vid.videoHeight;
+    // Use smaller canvas on mobile for performance
+    const scale=isMob?0.4:0.7;
+    cv.width=Math.floor(vid.videoWidth*scale);
+    cv.height=Math.floor(vid.videoHeight*scale);
     const ctx=cv.getContext('2d');
 
     // Draw mirrored video
