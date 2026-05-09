@@ -847,7 +847,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
         </div>
 
         <div class="a-actions">
-          <button class="btn-p" id="btn2-scan" onclick="start2v2()">START 2v2</button>
+          <button class="btn-p" id="btn2-scan" onclick="start2v2()">START PSL SCAN</button>
           <button class="btn-s" id="btn2-next" onclick="next2v2()" style="display:none">↺ NEXT</button>
         </div>
 
@@ -1671,6 +1671,9 @@ function finishPSL(){
   setTimeout(()=>{
     _pslDone=true;
     document.getElementById('psl-screen').classList.remove('open');
+    // Update 2v2 button to show it's ready
+    const btn2=document.getElementById('btn2-scan');
+    if(btn2)btn2.textContent='START 2v2';
     // Feed video to arena cam
     const arenaVid=document.getElementById('vid-you');
     if(_pslStream){arenaVid.srcObject=_pslStream;arenaVid.style.display='block';}
@@ -1958,7 +1961,13 @@ function copyTeamCode(){
   showToast('Team code copied: '+_teamCode);
 }
 
+let _2v2Running=false;
 function start2v2(){
+  if(!_pslDone){showToast('Complete PSL scan first! 📷');startPSL();return;}
+  if(_2v2Running)return;
+  _2v2Running=true;
+  document.getElementById('btn2-scan').disabled=true;
+  document.getElementById('btn2-scan').style.opacity='0.5';
   genTeamCode();
   // Simulate finding opponent team
   const opp1=OPP_NAMES[Math.floor(Math.random()*OPP_NAMES.length)];
@@ -1984,12 +1993,15 @@ function start2v2(){
     document.getElementById('result-2v2').style.display='block';
     document.getElementById('btn2-scan').style.display='none';
     document.getElementById('btn2-next').style.display='inline-block';
+    document.getElementById('btn2-scan').disabled=false;
+    document.getElementById('btn2-scan').style.opacity='1';
     document.getElementById('a-elo').textContent=sElo.toLocaleString()+' ELO';
     if(won)setTimeout(spawnConfetti,300);
   },2500);
 }
 
 function next2v2(){
+  _2v2Running=false;
   document.getElementById('result-2v2').style.display='none';
   document.getElementById('cb2-opp1').classList.remove('hot');
   document.getElementById('cb2-opp2').classList.remove('hot');
