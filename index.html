@@ -437,7 +437,8 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
   .nav-ham{display:flex}
   .nav-cta{font-size:.56rem;padding:.4rem .75rem}
   .pw{padding:4.5rem 1rem 2.5rem}
-  .battle{grid-template-columns:1fr!important;gap:.5rem}
+  .battle{display:flex!important;flex-direction:column!important;gap:.5rem}
+  .cambox{min-height:200px;aspect-ratio:4/3!important}
   .vs-col{flex-direction:row!important;padding:.25rem 0;justify-content:center}
   .vs-live{flex-direction:row;gap:.5rem}
   .vs-t{font-size:1.6rem}
@@ -595,7 +596,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
       <div class="psl-angle">← Left</div>
     </div>
     <div class="psl-panel center waiting" id="pp-center">
-      <video id="psl-vid" autoplay muted playsinline webkit-playsinline></video>
+      <video id="psl-vid" autoplay muted playsinline webkit-playsinline style="transform:scaleX(-1)"></video>
       <canvas id="pc-center"></canvas>
       <div class="psl-scanbar"></div>
       <div class="psl-check" id="pk-center">✅</div>
@@ -699,7 +700,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
       </div>
       <div style="display:flex;align-items:center;gap:.5rem">
         <div class="a-pill ap-idle" id="a-pill"><span class="ap-dot"></span><span id="a-pill-txt">Idle</span></div>
-        <div class="a-elo" id="a-elo">1,823 ELO</div>
+        <div class="a-elo" id="a-elo">800 ELO</div>
       </div>
     </div>
 
@@ -728,7 +729,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
         <div class="battle" id="battle-grid">
           <!-- YOU -->
           <div class="cambox scan-box" id="cb-you">
-            <video id="vid-you" autoplay muted playsinline webkit-playsinline style="display:none"></video>
+            <video id="vid-you" autoplay muted playsinline webkit-playsinline style="display:none;transform:scaleX(-1)"></video>
             <canvas id="cv-you"></canvas>
             <div class="cam-scan" id="scan-you"></div>
             <div class="cam-empty" id="ce-you">
@@ -786,7 +787,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
         <div class="a-session">
           <div class="ass"><div class="n" id="ss-w">0</div><div class="l">Wins</div></div>
           <div class="ass"><div class="n" id="ss-l">0</div><div class="l">Losses</div></div>
-          <div class="ass"><div class="n r" id="ss-e">1,823</div><div class="l">ELO</div></div>
+          <div class="ass"><div class="n r" id="ss-e">800</div><div class="l">ELO</div></div>
           <div class="ass"><div class="n" id="ss-s">—</div><div class="l">Streak</div></div>
         </div>
       </div>
@@ -901,7 +902,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
             <div class="lw-p" id="lwp-you">
               <div class="lwp-av" id="lwp-av-you">😤</div>
               <div class="lwp-nm" id="lwp-nm-you">You</div>
-              <div class="lwp-elo" id="lwp-elo-you">1,823 ELO</div>
+              <div class="lwp-elo" id="lwp-elo-you">800 ELO</div>
               <div class="lwp-rdy show"></div>
             </div>
             <div class="lw-vs">VS</div>
@@ -1340,6 +1341,14 @@ function updateNavUser(){
 
 function syncProfile(){
   if(!user)return;
+  // Sync arena ELO from user data
+  if(user.elo){
+    sElo=user.elo;sWins=user.wins||0;sLoss=user.losses||0;
+    const eloEl=document.getElementById('a-elo');
+    if(eloEl)eloEl.textContent=sElo.toLocaleString()+' ELO';
+    const ssEl=document.getElementById('ss-e');
+    if(ssEl)ssEl.textContent=sElo.toLocaleString();
+  }
   const av=document.getElementById('prof-av');
   const nm=document.getElementById('prof-nm');
   const meta=document.getElementById('prof-meta');
@@ -1715,7 +1724,7 @@ function startArenaMesh(vid){
 }
 
 // ─── ARENA MATCH ───
-let sWins=0,sLoss=0,sElo=1823,sStreak=0,_phase='idle',_timerT=null,_oppInt=null;
+let sWins=0,sLoss=0,sElo=800,sStreak=0,_phase='idle',_timerT=null,_oppInt=null;
 const OPP_NAMES=['xChad_01','FaceGod99','ProMogger','CrownKing','EliteMax','NordicGod','JawlineGod','BlazeMax'];
 
 function setBtn(s){
@@ -2358,32 +2367,57 @@ function setupP2PConn(conn){
 }
 
 // Create lobby with real P2P code
-function createLobby(){
-  initPeer((peerId)=>{
-    _lobbyCode=peerId.replace('fc','').toUpperCase().substr(0,6);
-    // Store mapping
+async function createLobby(){
+  initPeer(async (peerId)=>{
     _peerIdFull=peerId;
+    // Use short readable code
+    _lobbyCode=Math.random().toString(36).substr(2,6).toUpperCase();
     document.getElementById('lobby-code').textContent=_lobbyCode;
     document.getElementById('lw-link-code').textContent=_lobbyCode;
+    // Save code→peerId mapping in Supabase
+    const db=getSupa();
+    if(db){
+      try{
+        await db.from('lobbies').upsert({code:_lobbyCode,peer_id:peerId,created_at:new Date().toISOString()});
+      }catch(e){}
+    }
+    addChat('System','Lobby '+_lobbyCode+' ready! Share the code!','sys');
     showWaitRoom('create');
   });
 }
 
 // Join lobby with friend's code
-function joinLobby(){
+async function joinLobby(){
   const inp=document.getElementById('join-inp');
   const code=inp?inp.value.trim().toUpperCase():'';
   if(code.length<4){if(inp)inp.style.borderColor='var(--red)';return;}
   if(inp)inp.style.borderColor='var(--g2)';
-  addChat('System','Connecting to lobby...','sys');
+  addChat('System','Looking up lobby...','sys');
+  showWaitRoom('join');
+  _lobbyCode=code;
+
+  // Look up full peer ID from Supabase
+  const db=getSupa();
+  let hostPeerId=null;
+  if(db){
+    try{
+      const r=await db.from('lobbies').select('peer_id').eq('code',code).single();
+      if(r.data)hostPeerId=r.data.peer_id;
+    }catch(e){}
+  }
+
+  if(!hostPeerId){
+    addChat('System','Lobby not found. Check the code!','sys');
+    showToast('Lobby not found!');
+    return;
+  }
+
+  addChat('System','Connecting to host...','sys');
   initPeer(()=>{
-    // Connect to host's peer
-    const hostId='fc'+code.toLowerCase();
-    const conn=_peer.connect(hostId,{reliable:true});
+    const conn=_peer.connect(hostPeerId,{reliable:true});
     _conn=conn;_isHost=false;
+    conn.on('error',e=>{addChat('System','Connection failed: '+e,'sys');showToast('Could not connect to lobby');});
     setupP2PConn(conn);
-    _lobbyCode=code;
-    showWaitRoom('join');
   });
 }
 
