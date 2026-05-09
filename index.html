@@ -437,11 +437,14 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
   .nav-ham{display:flex}
   .nav-cta{font-size:.56rem;padding:.4rem .75rem}
   .pw{padding:4.5rem 1rem 2.5rem}
-  .battle{grid-template-columns:1fr;gap:.5rem}
-  .vs-col{flex-direction:row;padding:.25rem 0;justify-content:center}
+  .battle{grid-template-columns:1fr!important;gap:.5rem}
+  .vs-col{flex-direction:row!important;padding:.25rem 0;justify-content:center}
   .vs-live{flex-direction:row;gap:.5rem}
   .vs-t{font-size:1.6rem}
   .vs-bar-wrap{display:none}
+  .ranked-wrap{padding:.5rem .75rem}
+  .a-actions{flex-direction:column}
+  .a-actions .btn-p,.a-actions .btn-s{width:100%;text-align:center}
   .steps,.fg,.pgrid,.pstats,.social-grid{grid-template-columns:1fr}
   .pc.feat{margin:0}
   .hact{gap:.6rem}
@@ -1496,142 +1499,81 @@ function startPSL(){
     });
 }
 
-// ─── CANVAS PSL — no CDN needed ───
-// Uses canvas to draw video + detect face position by skin pixel analysis
+// ─── CANVAS PSL — timer based (5s per angle) ───
 let _pslRafId=null;
+let _pslTimerInterval=null;
+const PSL_STEP_SECS=5;
 
 function startCanvasPSL(vid){
   const cv=document.getElementById('pc-center');
-  let lastNoseX=0.5, smoothYaw=0, frameN=0;
 
+  // Draw video loop (lightweight — just mirror video, no pixel analysis)
   let _lastFrame=0;
-  function loop(ts){
-    // Throttle to ~15fps on mobile to prevent freeze
-    const isMob=window.innerWidth<=640;
-    const minGap=isMob?66:33;
-    if(ts-_lastFrame<minGap){_pslRafId=requestAnimationFrame(loop);return;}
+  function drawLoop(ts){
+    if(ts-_lastFrame<50){_pslRafId=requestAnimationFrame(drawLoop);return;}
     _lastFrame=ts;
-    if(!vid.videoWidth){_pslRafId=requestAnimationFrame(loop);return;}
-    // Use smaller canvas on mobile for performance
-    const scale=isMob?0.4:0.7;
+    if(!vid.videoWidth){_pslRafId=requestAnimationFrame(drawLoop);return;}
+    const isMob=window.innerWidth<=640;
+    const scale=isMob?0.5:0.75;
     cv.width=Math.floor(vid.videoWidth*scale);
     cv.height=Math.floor(vid.videoHeight*scale);
     const ctx=cv.getContext('2d');
-
-    // Draw mirrored video
     ctx.save();ctx.scale(-1,1);ctx.drawImage(vid,-cv.width,0,cv.width,cv.height);ctx.restore();
-
-    // Detect face direction via brightness/color sampling
+    // Draw simple face oval overlay
     const W=cv.width,H=cv.height;
-    const imgData=ctx.getImageData(0,0,W,H);
-    const d=imgData.data;
-
-    // Sample skin pixels in left half vs right half of face region
-    const faceTop=Math.floor(H*0.15),faceBot=Math.floor(H*0.75);
-    const faceMid=Math.floor(W*0.5);
-    let leftSkin=0,rightSkin=0,leftCount=0,rightCount=0;
-
-    for(let y=faceTop;y<faceBot;y+=4){
-      for(let x=Math.floor(W*0.2);x<Math.floor(W*0.8);x+=4){
-        const i=(y*W+x)*4;
-        const r=d[i],g=d[i+1],b=d[i+2];
-        // Simple skin detection
-        const isSkin=r>95&&g>40&&b>20&&r>g&&r>b&&Math.abs(r-g)>15&&r-b>15;
-        if(isSkin){
-          if(x<faceMid){leftSkin++;leftCount++;}
-          else{rightSkin++;rightCount++;}
-        }
-      }
-    }
-
-    // Yaw from skin distribution
-    const total=leftSkin+rightSkin;
-    let yaw=0;
-    if(total>50){
-      yaw=(rightSkin-leftSkin)/total; // positive=more skin right=face turned left
-    }
-    smoothYaw=smoothYaw*.7+yaw*.3;
-
-    // Draw face mesh overlay (grid lines for visual feedback)
-    ctx.strokeStyle='rgba(255,45,45,0.3)';ctx.lineWidth=1;
-    // Draw face oval
-    ctx.beginPath();
-    ctx.ellipse(W/2+smoothYaw*W*0.3,H*0.45,W*0.2,H*0.28,0,0,Math.PI*2);
-    ctx.stroke();
-    // Draw grid dots
-    ctx.fillStyle='rgba(255,45,45,0.5)';
-    for(let dy=-3;dy<=3;dy++){
-      for(let dx=-3;dx<=3;dx++){
-        const px=W/2+smoothYaw*W*0.25+dx*W*0.05;
-        const py=H*0.45+dy*H*0.07;
-        if(px>W*0.1&&px<W*0.9){
-          ctx.beginPath();ctx.arc(px,py,2,0,Math.PI*2);ctx.fill();
-        }
-      }
-    }
-    // Nose indicator
-    ctx.fillStyle='rgba(255,45,45,0.8)';
-    ctx.beginPath();
-    ctx.arc(W/2+smoothYaw*W*0.3,H*0.5,4,0,Math.PI*2);
-    ctx.fill();
-
-    frameN++;
-
-    // Score from face size (bigger = closer = better)
-    const faceScore=total>200?Math.min(9.8,5+total/500*4):5;
-
-    // Check phase
-    let ok=false;
-    if(_pslPhase===0) ok=smoothYaw>0.15;       // turned left
-    else if(_pslPhase===1) ok=Math.abs(smoothYaw)<0.1; // forward
-    else if(_pslPhase===2) ok=smoothYaw<-0.15;  // turned right
-
-    if(ok&&frameN>15){
-      _pslHold++;
-      const se=document.getElementById('psl-score-badge');
-      const sc=parseFloat((5+Math.random()*3+faceScore*0.2).toFixed(1));
-      se.textContent=Math.min(9.8,sc).toFixed(1);
-      se.style.color=sc>6?'var(--grn)':'var(--wh)';
-      se.classList.add('show');
-    } else if(!ok) {
-      _pslHold=Math.max(0,_pslHold-1);
-    }
-
-    const prog=(_pslPhase/3+_pslHold/(HOLD_FRAMES*3))*100;
-    document.getElementById('psl-bar').style.width=Math.min(prog,100)+'%';
-
-    if(_pslHold>=HOLD_FRAMES){
-      const sc=parseFloat((5.5+Math.random()*3.5).toFixed(1));
-      _pslScores[_pslPhase]=sc;
-      cancelAnimationFrame(_pslRafId);
-      completePSLStep(sc);
-      // Snapshot this angle
-      const dst=document.getElementById(PSL_CANVASES[_pslPhase]);
-      dst.width=cv.width;dst.height=cv.height;
-      dst.getContext('2d').drawImage(cv,0,0);
-      // Resume for next step
-      if(_pslPhase<3){
-        setTimeout(()=>{_pslRafId=requestAnimationFrame(loop);},400);
-      }
-      return;
-    }
-
-    _pslRafId=requestAnimationFrame(loop);
+    ctx.strokeStyle='rgba(255,45,45,0.5)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.ellipse(W/2,H*0.44,W*0.22,H*0.3,0,0,Math.PI*2);ctx.stroke();
+    _pslRafId=requestAnimationFrame(drawLoop);
   }
+  _pslRafId=requestAnimationFrame(drawLoop);
 
-  _pslRafId=requestAnimationFrame(loop);
+  // Start first step timer
+  runPSLStepTimer();
 }
 
+function runPSLStepTimer(){
+  if(_pslTimerInterval)clearInterval(_pslTimerInterval);
+  let secs=PSL_STEP_SECS;
+  const cdEl=document.getElementById('psl-cd');
+  if(cdEl)cdEl.textContent=secs;
+
+  // Update progress bar for this step
+  const progBase=_pslPhase/3*100;
+  document.getElementById('psl-bar').style.width=progBase+'%';
+
+  _pslTimerInterval=setInterval(()=>{
+    secs--;
+    if(cdEl)cdEl.textContent=secs>0?secs:'✓';
+
+    // Progress bar fills during countdown
+    const prog=(_pslPhase/3+(PSL_STEP_SECS-secs)/(PSL_STEP_SECS*3))*100;
+    document.getElementById('psl-bar').style.width=Math.min(prog,100)+'%';
+
+    if(secs<=0){
+      clearInterval(_pslTimerInterval);
+      const sc=parseFloat((6+Math.random()*3.5).toFixed(1));
+      _pslScores[_pslPhase]=sc;
+      // Snapshot
+      const cv2=document.getElementById('pc-center');
+      const dst=document.getElementById(PSL_CANVASES[_pslPhase]);
+      if(dst&&cv2){dst.width=cv2.width;dst.height=cv2.height;dst.getContext('2d').drawImage(cv2,0,0);}
+      completePSLStep(sc);
+    }
+  },1000);
+}
 function completePSLStep(score){
   _pslHold=0;
-  // panel done
   const co=document.getElementById('psl-check-overlay');if(co){co.style.opacity='1';setTimeout(()=>{if(co)co.style.opacity='0';},500);}
   document.getElementById(PSL_STEPS[_pslPhase]).className='psl-step ok';
   snapshotAngle(_pslPhase);
   _pslPhase++;
   document.getElementById('psl-bar').style.width=(_pslPhase/3*100)+'%';
-  if(_pslPhase<3) updatePSLStep(_pslPhase);
-  else finishPSL();
+  if(_pslPhase<3){
+    updatePSLStep(_pslPhase);
+    setTimeout(()=>runPSLStepTimer(),400);
+  } else {
+    finishPSL();
+  }
 }
 
 function snapshotAngle(i){
