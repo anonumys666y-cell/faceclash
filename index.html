@@ -1096,13 +1096,34 @@ function getSupa(){
   return supa;
 }
 
-async function dbGetOrCreatePlayer(nick, avatar) {
+async function dbGetPlayerByGoogleId(google_id) {
   const db=getSupa();if(!db)return null;
   try{
+    const r = await db.from('players').select('*').eq('google_id', google_id).single();
+    return r.data || null;
+  }catch(e){return null;}
+}
+
+async function dbGetOrCreatePlayer(nick, avatar, google_id) {
+  const db=getSupa();if(!db)return null;
+  try{
+    // If google_id provided, check by google_id first (prevents multi-account)
+    if(google_id){
+      const byGoogle = await dbGetPlayerByGoogleId(google_id);
+      if(byGoogle) return byGoogle;
+    }
+    // Check by nick
     const r1 = await db.from('players').select('*').eq('nick', nick).single();
     const existing = r1.data;
-    if (existing) return existing;
-    const r2 = await db.from('players').insert({ nick, avatar, elo: 800 }).select().single();
+    if (existing) {
+      // If existing player has no google_id yet, bind it
+      if(google_id && !existing.google_id){
+        await db.from('players').update({google_id}).eq('nick', nick);
+        existing.google_id = google_id;
+      }
+      return existing;
+    }
+    const r2 = await db.from('players').insert({ nick, avatar, elo: 800, google_id: google_id||null }).select().single();
     return r2.data;
   }catch(e){return null;}
 }
@@ -1194,8 +1215,7 @@ function setPill(s){
 // ─── GOOGLE AUTH ───
 const GOOGLE_CLIENT_ID = '453279507642-1hecdod6uud03f9qn0ucaipkivjtt2vv.apps.googleusercontent.com';
 
-function handleGoogleSignIn(response) {
-  // Decode JWT token from Google
+async function handleGoogleSignIn(response) {
   try {
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
     const googleUser = {
@@ -1205,13 +1225,34 @@ function handleGoogleSignIn(response) {
       email: payload.email,
       picture: payload.picture
     };
-    // Show step 2 with pre-filled name
-    document.getElementById('auth-s1').style.display = 'none';
-    document.getElementById('auth-s2').style.display = 'block';
-    const nickInp = document.getElementById('nick-inp');
-    if(nickInp) nickInp.value = googleUser.nick;
-    // Store google data for later
-    window._googleUser = googleUser;
+    // Check if this Google account already has a player
+    showToast('Signing in...');
+    const existing = await dbGetPlayerByGoogleId(googleUser.google_id);
+    if(existing){
+      // Already registered — just log in, no nick screen
+      user = {
+        nick: existing.nick,
+        avatar: existing.avatar || '😤',
+        elo: existing.elo || 800,
+        wins: existing.wins || 0,
+        losses: existing.losses || 0,
+        google_id: googleUser.google_id,
+        email: googleUser.email
+      };
+      window._googleUser = null;
+      closeAuth();
+      updateNavUser();
+      syncProfile();
+      go('arena');
+      showToast('Welcome back, ' + user.nick + '! 🔥');
+    } else {
+      // New user — show nick picker once
+      document.getElementById('auth-s1').style.display = 'none';
+      document.getElementById('auth-s2').style.display = 'block';
+      const nickInp = document.getElementById('nick-inp');
+      if(nickInp) nickInp.value = '';
+      window._googleUser = googleUser;
+    }
   } catch(e) {
     showToast('Google sign-in error. Try again.');
   }
@@ -1265,8 +1306,8 @@ function finishAuth(){
     google_id: googleData.google_id||null,
     email: googleData.email||null
   };
-  // Create or get player in DB
-  dbGetOrCreatePlayer(nick, selAvatar||'😤').then(p=>{
+  // Create or get player in DB (bind google_id so 1 Google = 1 account)
+  dbGetOrCreatePlayer(nick, selAvatar||'😤', user.google_id||null).then(p=>{
     if(p){ user.elo=p.elo; user.wins=p.wins; user.losses=p.losses; updateNavUser(); syncProfile(); }
   }).catch(()=>{});
   window._googleUser = null;
