@@ -160,12 +160,23 @@ nav{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-
 .hcta p{font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g3);margin-bottom:2rem;position:relative;z-index:1}
 
 /* ══ PSL SCAN ══ */
-.psl-screen{display:none;position:fixed;inset:0;background:var(--bk);z-index:200;flex-direction:column;align-items:center;justify-content:flex-start;padding:1rem;overflow-y:auto;padding-top:max(1rem,env(safe-area-inset-top))}
+.psl-screen{display:none;position:fixed;inset:0;background:#0a0a0f;z-index:200;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto}
 .psl-screen.open{display:flex}
 .psl-logo{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.15em;color:var(--g3);margin-bottom:.25rem;text-align:center}
 .psl-logo span{color:var(--red)}
-.psl-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.6rem,4vw,2.5rem);letter-spacing:.06em;line-height:1;text-align:center}
-.psl-sub{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g3);margin:.4rem 0 1.5rem;text-align:center}
+.psl-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.4rem,3vw,2rem);letter-spacing:.12em;line-height:1;text-align:center;margin-bottom:.2rem}
+.psl-sub{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g3);margin:.3rem 0 1rem;text-align:center}
+/* New Omegle-style scan */
+.psl-cam-wrap{position:relative;width:min(360px,88vw);aspect-ratio:4/3;background:#111;border-radius:6px;overflow:hidden;margin-bottom:.75rem;border:.5px solid rgba(255,45,45,.2)}
+.psl-cam-wrap video,.psl-cam-wrap canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.psl-cam-wrap video{transform:scaleX(-1)}
+.psl-corner{position:absolute;width:22px;height:22px;z-index:10}
+.psl-corner.tl{top:10px;left:10px;border-top:2.5px solid var(--red);border-left:2.5px solid var(--red)}
+.psl-corner.tr{top:10px;right:10px;border-top:2.5px solid var(--red);border-right:2.5px solid var(--red)}
+.psl-corner.bl{bottom:10px;left:10px;border-bottom:2.5px solid var(--red);border-left:2.5px solid var(--red)}
+.psl-corner.br{bottom:10px;right:10px;border-bottom:2.5px solid var(--red);border-right:2.5px solid var(--red)}
+.psl-cam-label{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:.15em;background:rgba(0,0,0,.82);color:var(--wh);padding:.35rem 1.25rem;border-radius:3px;z-index:10;white-space:nowrap;border:.5px solid rgba(255,45,45,.3)}
+.psl-error-msg{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--red);text-align:center;letter-spacing:.08em;min-height:1.1rem;margin-bottom:.4rem;text-transform:uppercase}
 /* 3 panels */
 .psl-panels{display:flex;gap:.75rem;align-items:flex-end;max-width:680px;width:100%;margin-bottom:1.25rem}
 .psl-panel{flex:1;position:relative;background:#08080B;border:.5px solid var(--g2);overflow:hidden;border-radius:2px;transition:border-color .4s,box-shadow .4s;aspect-ratio:3/4}
@@ -184,12 +195,13 @@ nav{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-
 .psl-score.show{opacity:1}
 .psl-angle{position:absolute;bottom:.5rem;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;background:rgba(6,6,8,.9);color:var(--g3);padding:.18rem .45rem;border:.5px solid var(--g2);white-space:nowrap;z-index:5}
 /* steps */
-.psl-steps{display:flex;gap:.5rem;max-width:680px;width:100%;margin-bottom:1rem}
-.psl-step{flex:1;text-align:center;padding:.6rem .5rem;border:.5px solid var(--g2);background:var(--g1);transition:all .3s}
-.psl-step.cur{border-color:var(--red);background:rgba(255,45,45,.06)}
-.psl-step.ok{border-color:var(--grn);background:rgba(74,222,128,.05)}
-.ps-ico{font-size:1.2rem;margin-bottom:.2rem}
-.ps-lbl{font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g3)}
+.psl-steps{display:flex;gap:0;max-width:min(360px,88vw);width:100%;margin-bottom:.5rem;border:.5px solid var(--g2);overflow:hidden;border-radius:3px}
+.psl-step{flex:1;text-align:center;padding:.55rem .3rem;background:var(--g1);transition:all .3s;border-right:.5px solid var(--g2)}
+.psl-step:last-child{border-right:none}
+.psl-step.cur{background:rgba(255,45,45,.12)}
+.psl-step.ok{background:rgba(74,222,128,.08)}
+.ps-ico{display:none}
+.ps-lbl{font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g3)}
 .psl-step.cur .ps-lbl{color:var(--red)}
 .psl-step.ok .ps-lbl{color:var(--grn)}
 .psl-prog{width:100%;max-width:680px;height:3px;background:var(--g2);border-radius:2px;margin-bottom:1.25rem;overflow:hidden}
@@ -584,49 +596,53 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 <!-- ══ PSL SCAN SCREEN ══ -->
 <div class="psl-screen" id="psl-screen">
   <div class="psl-logo">FACE<span>CLASH</span></div>
-  <div class="psl-title">FACE SCAN</div>
-  <div class="psl-sub">Liveness check · Cannot be faked with video or OBS</div>
+  <div class="psl-title">CAMERA ACCESS CHECK</div>
+  <div class="psl-sub">Liveness check · Cannot be faked with OBS or video</div>
 
-  <div class="psl-panels" id="psl-panels">
-    <div class="psl-panel waiting" id="pp-left">
-      <canvas id="pc-left"></canvas>
-      <div class="psl-scanbar"></div>
-      <div class="psl-check" id="pk-left">✅</div>
-      <div class="psl-score" id="ps-left"></div>
-      <div class="psl-angle">← Left</div>
-    </div>
-    <div class="psl-panel center waiting" id="pp-center">
-      <video id="psl-vid" autoplay muted playsinline webkit-playsinline style="transform:scaleX(-1)"></video>
-      <canvas id="pc-center"></canvas>
-      <div class="psl-scanbar"></div>
-      <div class="psl-check" id="pk-center">✅</div>
-      <div class="psl-score" id="ps-center"></div>
-      <div class="psl-angle">Front</div>
-    </div>
-    <div class="psl-panel waiting" id="pp-right">
-      <canvas id="pc-right"></canvas>
-      <div class="psl-scanbar"></div>
-      <div class="psl-check" id="pk-right">✅</div>
-      <div class="psl-score" id="ps-right"></div>
-      <div class="psl-angle">Right →</div>
-    </div>
+  <!-- Single camera view Omegle-style -->
+  <div class="psl-cam-wrap" id="psl-cam-wrap">
+    <video id="psl-vid" autoplay muted playsinline webkit-playsinline></video>
+    <canvas id="pc-center"></canvas>
+    <!-- hidden canvases for snapshots -->
+    <canvas id="pc-left" style="display:none"></canvas>
+    <canvas id="pc-right" style="display:none"></canvas>
+    <!-- Corner brackets -->
+    <div class="psl-corner tl"></div>
+    <div class="psl-corner tr"></div>
+    <div class="psl-corner bl"></div>
+    <div class="psl-corner br"></div>
+    <!-- Step label -->
+    <div class="psl-cam-label" id="psl-instr">ALIGN FACE</div>
+    <div id="psl-cd" style="display:none"></div>
   </div>
 
+  <!-- Error message -->
+  <div class="psl-error-msg" id="psl-error"></div>
+
+  <!-- Step indicators -->
   <div class="psl-steps">
-    <div class="psl-step cur" id="pst-0"><div class="ps-ico">◀️</div><div class="ps-lbl">Turn Left</div></div>
-    <div class="psl-step" id="pst-1"><div class="ps-ico">😐</div><div class="ps-lbl">Forward</div></div>
-    <div class="psl-step" id="pst-2"><div class="ps-ico">▶️</div><div class="ps-lbl">Turn Right</div></div>
+    <div class="psl-step cur" id="pst-0"><div class="ps-lbl">ALIGN</div></div>
+    <div class="psl-step" id="pst-1"><div class="ps-lbl">LOOK</div></div>
+    <div class="psl-step" id="pst-2"><div class="ps-lbl">TURN</div></div>
+    <div class="psl-step" id="pst-3"><div class="ps-lbl">DONE</div></div>
   </div>
+
   <div class="psl-prog"><div class="psl-bar" id="psl-bar"></div></div>
-  <div class="psl-instr" id="psl-instr">Turn your head ← LEFT</div>
-  <div class="psl-cd" id="psl-cd"></div>
+
   <div class="psl-final" id="psl-final">
     <div class="psl-final-score" id="psl-fscore">7.4</div>
-    <div class="psl-final-lbl">Your PSL Score · Entering Arena...</div>
+    <div class="psl-final-lbl">PSL Score · Entering Arena...</div>
   </div>
-  <div class="psl-demo-note" id="psl-demo-note" style="display:none">
-    Camera not available — running in demo mode.<br>
-    Deploy to <a href="https://vercel.com" target="_blank">Vercel</a> for full functionality.
+
+  <!-- Legacy hidden elements (referenced by JS) -->
+  <div style="display:none">
+    <div id="pp-left"></div><div id="pp-center"></div><div id="pp-right"></div>
+    <div id="pk-left"></div><div id="pk-center"></div><div id="pk-right"></div>
+    <div id="ps-left"></div><div id="ps-center"></div><div id="ps-right"></div>
+    <div id="psl-scanbar-main"></div>
+    <div id="psl-score-badge"></div>
+    <div id="psl-check-overlay"></div>
+    <div id="psl-demo-note"></div>
   </div>
 </div>
 
@@ -1476,8 +1492,8 @@ const PSL_PANELS=['pp-left','pp-center','pp-right'];
 const PSL_CHECKS=['pk-left','pk-center','pk-right'];
 const PSL_SCORES=['ps-left','ps-center','ps-right'];
 const PSL_CANVASES=['pc-left','pc-center','pc-right'];
-const PSL_STEPS=['pst-0','pst-1','pst-2'];
-const PSL_INSTRS=['Turn your head ← LEFT','Look straight FORWARD','Turn your head RIGHT →'];
+const PSL_STEPS=['pst-0','pst-1','pst-2','pst-3'];
+const PSL_INSTRS=['ALIGN FACE','LOOK FORWARD','TURN HEAD →','SCAN COMPLETE ✓'];
 const HOLD_FRAMES=40;
 const YAW_THRESH=0.25;
 
@@ -1503,9 +1519,15 @@ function startPSL(){
       updatePSLStep(0);
     })
     .catch(err=>{
-      showToast('Camera access denied. Allow camera to play!');
-      document.getElementById('psl-screen').classList.remove('open');
-      setPill('idle');
+      const errEl=document.getElementById('psl-error');
+      if(errEl)errEl.textContent='CAMERA ACCESS DENIED — allow camera to play';
+      const instr=document.getElementById('psl-instr');
+      if(instr)instr.textContent='CAMERA ERROR';
+      setTimeout(()=>{
+        document.getElementById('psl-screen').classList.remove('open');
+        setPill('idle');
+        if(errEl)errEl.textContent='';
+      },2500);
     });
 }
 
@@ -1596,13 +1618,15 @@ function runPSLStepTimer(vid, cv){
       faceOk=skinRatio>0.08;
     }
 
+    const errEl2=document.getElementById('psl-error');
     if(faceOk){
       _pslFaceTime++;
       displaySecs=Math.max(0,PSL_STEP_SECS-_pslFaceTime);
       if(cdEl){cdEl.textContent=displaySecs>0?displaySecs:'✓';cdEl.style.color=displaySecs<=2?'var(--grn)':'var(--red)';}
+      if(errEl2)errEl2.textContent='';
     } else {
-      // Face not detected — pause timer, show warning
-      if(cdEl){cdEl.textContent='👤?';cdEl.style.color='var(--red)';}
+      if(cdEl){cdEl.textContent=displaySecs;cdEl.style.color='var(--red)';}
+      if(errEl2)errEl2.textContent='NO FACE DETECTED — position your face in frame';
     }
 
     // Progress bar
