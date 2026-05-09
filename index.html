@@ -171,8 +171,8 @@ nav{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-
 .psl-panel{flex:1;position:relative;background:#08080B;border:.5px solid var(--g2);overflow:hidden;border-radius:2px;transition:border-color .4s,box-shadow .4s;aspect-ratio:3/4}
 .psl-panel.center{flex:1.35}
 .psl-panel video,.psl-panel canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.psl-panel video{transform:scaleX(1)}
-.psl-panel canvas{transform:scaleX(1);pointer-events:none}
+.psl-panel video{transform:none}
+.psl-panel canvas{transform:none;pointer-events:none}
 .psl-panel.scanning{border-color:var(--red);box-shadow:0 0 20px rgba(255,45,45,.2)}
 .psl-panel.done{border-color:var(--grn);box-shadow:0 0 12px rgba(74,222,128,.15)}
 .psl-panel.waiting{opacity:.4}
@@ -227,11 +227,11 @@ nav{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-
 .ranked-wrap{flex:1;display:flex;flex-direction:column;gap:.75rem;padding:.875rem 1.25rem;max-width:960px;margin:0 auto;width:100%}
 /* cameras */
 .battle{display:grid;grid-template-columns:1fr 60px 1fr;gap:.75rem;align-items:stretch}
-.cambox{position:relative;background:#08080B;border:.5px solid var(--g2);overflow:hidden;border-radius:2px;aspect-ratio:3/4;transition:border-color .4s,box-shadow .4s}
+.cambox{position:relative;background:#08080B;border:.5px solid var(--g2);overflow:hidden;border-radius:2px;aspect-ratio:3/4;transition:border-color .4s,box-shadow .4s;min-height:180px}
 .cambox.hot{border-color:rgba(255,45,45,.5);box-shadow:inset 0 0 0 1px rgba(255,45,45,.1)}
 .cambox.pulsing{animation:glowPulse 2s ease infinite}
-.cambox video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(1)}
-.cambox canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;transform:scaleX(1)}
+.cambox video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:none}
+.cambox canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;transform:none}
 /* empty */
 .cam-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;text-align:center;padding:1rem;transition:opacity .3s}
 .ce-ico{font-size:2.5rem;opacity:.1}
@@ -716,16 +716,14 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
           </div>
         </div>
 
-        <div class="battle">
+        <div class="battle" id="battle-grid">
           <!-- YOU -->
           <div class="cambox scan-box" id="cb-you">
             <video id="vid-you" autoplay muted playsinline webkit-playsinline style="display:none"></video>
             <canvas id="cv-you"></canvas>
             <div class="cam-scan" id="scan-you"></div>
             <div class="cam-empty" id="ce-you">
-              <div class="ce-ico">📷</div>
-              <div class="ce-t">Your Camera</div>
-              <div class="ce-s">PSL Scan required<br>before each match</div>
+              <div style="width:48px;height:48px;border:1.5px solid var(--g2);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:.5rem"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--g3)" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div><div class="ce-t">Your Camera</div><div class="ce-s">Tap to start<br>PSL scan</div>
             </div>
             <div class="cam-tag ct-you">YOU</div>
             <div class="cam-live" id="live-you">Live <span class="clv" id="lv-you">—</span></div>
@@ -758,9 +756,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
           <div class="cambox scan-box" id="cb-opp">
             <div class="cam-scan" id="scan-opp"></div>
             <div class="cam-empty" id="ce-opp">
-              <div class="ce-ico">👤</div>
-              <div class="ce-t" id="opp-t">Opponent</div>
-              <div class="ce-s" id="opp-s">Complete PSL Scan<br>to find match</div>
+              <div style="width:48px;height:48px;border:1.5px solid var(--g2);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:.5rem"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--g3)" stroke-width="1.5"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg></div><div class="ce-t" id="opp-t">Opponent</div><div class="ce-s" id="opp-s">Find a match<br>to start</div>
             </div>
             <div class="cam-tag ct-opp" id="opp-tag">OPP</div>
             <div class="cam-live" id="live-opp">Live <span class="clv" id="lv-opp">—</span></div>
@@ -1000,7 +996,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
           <li class="off">Priority matchmaking</li>
           <li class="off">Streamer badge</li>
         </ul>
-        <button class="pc-btn feat" onclick="alert('💳 Coming soon — join Discord for early access!')">Get CLASH Pass</button>
+        <button class="pc-btn feat" onclick="window.open('https://buy.stripe.com/test_8x25kE2GEft2aw1dHPfjG00','_blank')">Get CLASH Pass</button>
       </div>
       <!-- TRUE ADAM -->
       <div class="pc">
@@ -1015,7 +1011,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
           <li class="on">Discord Elite role</li>
           <li class="on">Referral revenue share</li>
         </ul>
-        <button class="pc-btn" onclick="alert('💳 Coming soon!')">Go Elite</button>
+        <button class="pc-btn" onclick="window.open('https://buy.stripe.com/test_14A8wQ6WUbcM9rXeLTfjG01','_blank')">Go Elite</button>
       </div>
     </div>
 
@@ -1089,6 +1085,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 'use strict';
 
 // ─── SUPABASE ───
+const STRIPE_PK = 'pk_test_51TV8L9LeXmxIBhpsTOumDRuhBqe6YEjVgQIDL9xekBncXMjanqHBcuypnwN6lzZ4DGwrIzvwzPIAO8yFjUca66Rf00ayooL9Lk';
 const SUPA_URL = 'https://saksjwrnsltjwwpvcemp.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNha3Nqd3Juc2x0and3cHZjZW1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNjU5MDgsImV4cCI6MjA5Mzc0MTkwOH0.EqpDqMV7EnPUlKFPY2im0tqF2frFtALVKBPlLUOqHig';
 let supa = null;
@@ -1586,7 +1583,7 @@ function snapshotAngle(i){
   const dst=document.getElementById(PSL_CANVASES[i]);
   dst.width=vid.videoWidth||320;dst.height=vid.videoHeight||240;
   const ctx=dst.getContext('2d');
-  ctx.save();ctx.scale(-1,1);ctx.drawImage(vid,-dst.width,0,dst.width,dst.height);ctx.restore();
+  ctx.drawImage(vid,0,0,dst.width,dst.height);
 }
 
 function updatePSLStep(i){
@@ -1730,27 +1727,47 @@ function setBtn(s){
 }
 
 function findMatch(){
+  if(_phase==='searching')return; // prevent double click
   resetArena();_phase='searching';setPill('live');
   document.getElementById('btn-match').style.display='none';
   document.getElementById('btn-next').style.display='none';
-  const opp=OPP_NAMES[Math.floor(Math.random()*OPP_NAMES.length)];
+  // Show searching state - waiting for real opponent
   let d=0;
-  const di=setInterval(()=>{const e=document.getElementById('opp-s');if(e){d=(d+1)%4;e.textContent='Searching'+'.'.repeat(d+1);}},350);
-  setTimeout(()=>{
-    clearInterval(di);
-    document.getElementById('opp-t').textContent=opp;
-    document.getElementById('opp-s').innerHTML=`ELO ${1500+Math.floor(Math.random()*500)}`;
-    document.getElementById('opp-tag').textContent=opp.slice(0,8);
-    document.getElementById('cb-opp').classList.add('hot');
-    document.getElementById('live-opp').classList.add('show');
-    document.getElementById('vs-live').classList.add('show');
-    _oppInt=setInterval(()=>{
-      const v=(5+Math.random()*4).toFixed(1);
-      document.getElementById('lv-opp').textContent=v;
-      document.getElementById('vsl-o').textContent=v;
-    },500);
-    setTimeout(()=>runCountdown(opp),600);
-  },900+Math.random()*800);
+  const di=setInterval(()=>{
+    const e=document.getElementById('opp-s');
+    if(e){d=(d+1)%4;e.textContent='Searching'+'.'.repeat(d+1);}
+  },350);
+  document.getElementById('opp-t').textContent='Finding opponent...';
+  // Add cancel button
+  const actions=document.getElementById('a-actions')||document.querySelector('.a-actions');
+  const cancelBtn=document.createElement('button');
+  cancelBtn.className='btn-s';cancelBtn.id='btn-cancel';
+  cancelBtn.textContent='CANCEL';
+  cancelBtn.style.cssText='font-size:.85rem;padding:.6rem 1.25rem';
+  cancelBtn.onclick=function(){
+    clearInterval(di);_phase='ready';
+    this.remove();
+    document.getElementById('btn-match').style.display='inline-block';
+    document.getElementById('opp-t').textContent='Opponent';
+    document.getElementById('opp-s').textContent='Find a match to start';
+    setPill('ready');
+  };
+  if(actions)actions.appendChild(cancelBtn);
+  // Store interval so PeerJS can clear it when real opponent joins
+  window._searchInterval=di;
+}
+
+// Called when real opponent joins via PeerJS
+function opponentFound(nick, elo){
+  if(window._searchInterval)clearInterval(window._searchInterval);
+  const cb=document.getElementById('btn-cancel');if(cb)cb.remove();
+  document.getElementById('opp-t').textContent=nick||'Opponent';
+  document.getElementById('opp-s').innerHTML='ELO '+(elo||'—');
+  document.getElementById('opp-tag').textContent=(nick||'OPP').slice(0,8);
+  document.getElementById('cb-opp').classList.add('hot');
+  document.getElementById('live-opp').classList.add('show');
+  document.getElementById('vs-live').classList.add('show');
+  setTimeout(()=>runCountdown(nick||'Opponent'),600);
 }
 
 function runCountdown(opp){
@@ -2094,6 +2111,47 @@ function buildHistory(){
   ];
   c.innerHTML=M.map(m=>`<div class="mi"><div class="mres ${m.w?'w':'l'}">${m.w?'WIN':'LOSS'}</div><div><div class="mopp">vs ${m.o}</div><div class="mtime">${m.my} vs ${m.th} · ${m.t}</div></div><div class="msc">${m.my}<span style="color:var(--g3);font-size:.7rem"> vs </span>${m.th}</div><div class="melo ${m.e>0?'eu':'ed'}">${m.e>0?'+':''}${m.e} ELO</div></div>`).join('');
 }
+
+// ─── SOCIAL BOOST CLAIM ───
+const _claimed = JSON.parse(localStorage.getItem('fc_social_claimed') || '{}');
+
+function claimSocial(platform){
+  if(!user){openAuth();return;}
+  if(_claimed[platform]){showToast('Already claimed!');return;}
+  const rewards = {
+    instagram: {badge:'📸 Instagram Frame', key:'frame_instagram'},
+    tiktok: {badge:'🎵 TikTok Badge', key:'badge_tiktok'},
+    discord: {badge:'💬 Discord Access', key:'badge_discord'}
+  };
+  const reward = rewards[platform];
+  _claimed[platform] = true;
+  localStorage.setItem('fc_social_claimed', JSON.stringify(_claimed));
+  // Update button
+  const btn = document.getElementById('claim-'+platform.slice(0,2));
+  if(btn){btn.textContent='✓ Claimed';btn.style.background='var(--grn)';btn.disabled=true;}
+  // Add to user
+  if(!user.badges)user.badges=[];
+  user.badges.push(reward.key);
+  lsSave();
+  showToast('🎉 '+reward.badge+' unlocked!');
+  // Check if all 3 claimed → OG Supporter
+  if(_claimed.instagram && _claimed.tiktok && _claimed.discord){
+    if(!user.badges.includes('og_supporter')){
+      user.badges.push('og_supporter');
+      lsSave();
+      setTimeout(()=>showToast('🌟 OG Supporter badge unlocked!'),1000);
+    }
+  }
+}
+
+// Restore claimed state on load
+window.addEventListener('DOMContentLoaded',()=>{
+  Object.keys(_claimed).forEach(p=>{
+    const id = 'claim-'+p.slice(0,2);
+    const btn = document.getElementById(id);
+    if(btn){btn.textContent='✓ Claimed';btn.style.background='var(--grn)';btn.disabled=true;}
+  });
+});
 
 // ─── LIVE PANEL ANIMATION ───
 const LIVE_MSGS=[
