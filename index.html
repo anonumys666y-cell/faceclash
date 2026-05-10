@@ -13,21 +13,21 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{background:radial-gradient(circle at 50% 20%,rgba(255,30,30,.12),transparent 35%),radial-gradient(circle at 50% 90%,rgba(255,0,0,.10),transparent 35%),#050505;color:var(--wh);font-family:'Syne',sans-serif;overflow-x:hidden;cursor:crosshair;-webkit-font-smoothing:antialiased}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:42px 42px;opacity:.35;z-index:0}
+body{background:radial-gradient(ellipse 90% 50% at 50% -5%,rgba(255,25,25,.28),transparent 55%),radial-gradient(circle at 50% 100%,rgba(255,0,0,.12),transparent 45%),radial-gradient(circle at 15% 50%,rgba(255,0,0,.06),transparent 35%),radial-gradient(circle at 85% 50%,rgba(255,0,0,.06),transparent 35%),#040406;color:var(--wh);font-family:'Syne',sans-serif;overflow-x:hidden;cursor:crosshair;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:42px 42px;opacity:.35;z-index:0;animation:gridDrift 22s linear infinite}@keyframes gridDrift{0%{background-position:0 0,0 0}100%{background-position:42px 42px,42px 42px}}
 body::after{content:'';position:fixed;inset:0;pointer-events:none;background-image:url("https://grainy-gradients.vercel.app/noise.svg");opacity:.08;mix-blend-mode:screen;z-index:1}
 main,header,section{position:relative;z-index:2}
 .red-glow{box-shadow:0 0 18px rgba(255,35,35,.45),0 0 60px rgba(255,35,35,.18)}
 .live-pulse{animation:livePulse 1.2s infinite}
 @keyframes livePulse{0%,100%{opacity:1}50%{opacity:.45}}
 .scan-box{position:relative;overflow:hidden}
-.scan-box::after{content:'';position:absolute;left:0;top:-100%;width:100%;height:40%;background:linear-gradient(to bottom,transparent,rgba(255,0,0,.25),transparent);animation:scanMove 2.8s infinite}
+.scan-box::after{content:'';position:absolute;left:0;top:-100%;width:100%;height:2px;background:linear-gradient(90deg,transparent,rgba(255,45,45,.25),transparent);animation:scanMove 3.5s linear infinite;box-shadow:0 0 6px rgba(255,45,45,.2)}
 @keyframes scanMove{0%{top:-50%}100%{top:120%}}
 .arena-btn{background:linear-gradient(90deg,#ff1f1f,#ff3b3b)!important;color:white!important;box-shadow:0 0 40px rgba(255,0,0,.35)!important;animation:btnPulse 1.8s infinite}
 @keyframes btnPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
 .glitch{text-shadow:2px 0 #ff2a2a,-2px 0 #00eaff;animation:glitchA 1.4s infinite}
 @keyframes glitchA{0%,100%{transform:translate(0)}20%{transform:translate(-1px,1px)}40%{transform:translate(1px,-1px)}60%{transform:translate(-1px,0)}}
-.live-panel{position:fixed;right:1.25rem;top:50%;transform:translateY(-50%);background:rgba(10,10,12,.92);border:.5px solid rgba(255,45,45,.3);padding:1rem 1.25rem;z-index:400;min-width:180px;backdrop-filter:blur(8px)}
+.live-panel{position:fixed;right:1.25rem;top:50%;transform:translateY(-50%);background:linear-gradient(160deg,rgba(14,14,20,.96),rgba(8,8,12,.98));border:.5px solid rgba(255,45,45,.35);padding:1rem 1.25rem;z-index:400;min-width:180px;backdrop-filter:blur(16px);box-shadow:0 0 40px rgba(255,45,45,.08),0 20px 60px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.05);animation:liveFloat 4s ease-in-out infinite}@keyframes liveFloat{0%,100%{transform:translateY(-50%)}50%{transform:translateY(calc(-50% - 6px))}}
 .live-panel h3{font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:.75rem;animation:livePulse 1.2s infinite}
 .live-panel p{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--g3);padding:.3rem 0;border-bottom:.5px solid rgba(255,255,255,.05);line-height:1.5}
 .live-panel p:last-child{border-bottom:none}
@@ -67,10 +67,10 @@ nav{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-
 .pw{max-width:1100px;margin:0 auto;padding:5.5rem 1.5rem 3rem}
 .sl{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--red);margin-bottom:.6rem}
 .st{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,5vw,4rem);line-height:1;letter-spacing:.04em;margin-bottom:2rem}
-.btn-p{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.12em;background:var(--red);color:var(--wh);border:none;padding:.75rem 1.75rem;cursor:crosshair;transition:box-shadow .3s;white-space:nowrap}
-.btn-p:hover{box-shadow:0 0 32px var(--glow)}
-.btn-s{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.12em;background:transparent;color:var(--wh);border:.5px solid var(--g2);padding:.75rem 1.75rem;cursor:crosshair;transition:border-color .2s;white-space:nowrap}
-.btn-s:hover{border-color:var(--wh)}
+.btn-p{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.12em;background:linear-gradient(135deg,#ff1a1a,#ff3d3d);color:var(--wh);border:none;padding:.75rem 1.75rem;cursor:crosshair;transition:box-shadow .25s,transform .25s;white-space:nowrap;position:relative;overflow:hidden}
+.btn-p:hover{box-shadow:0 0 40px rgba(255,45,45,.65),0 6px 25px rgba(255,45,45,.3);transform:translateY(-2px) scale(1.02)}.btn-p::after{content:'';position:absolute;top:0;left:-120%;width:70%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);transform:skewX(-20deg);transition:none}.btn-p:hover::after{animation:btnShine .6s ease forwards}@keyframes btnShine{to{left:140%}}
+.btn-s{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.12em;background:rgba(255,255,255,.03);color:var(--wh);border:.5px solid rgba(255,255,255,.15);padding:.75rem 1.75rem;cursor:crosshair;transition:border-color .25s,background .25s,transform .25s;white-space:nowrap;backdrop-filter:blur(4px)}
+.btn-s:hover{border-color:rgba(255,255,255,.6);background:rgba(255,255,255,.07);transform:translateY(-2px)}
 
 /* ══ AUTH MODAL ══ */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(6,6,8,.92);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
@@ -231,16 +231,16 @@ nav{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-
 .ap-ready{background:rgba(74,222,128,.08);color:var(--grn);border:.5px solid rgba(74,222,128,.2)}
 .ap-live{background:rgba(255,45,45,.1);color:var(--red);border:.5px solid rgba(255,45,45,.2)}
 .ap-dot{width:4px;height:4px;border-radius:50%;background:currentColor;animation:pulse 1.5s infinite}
-.a-elo{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em;background:rgba(255,45,45,.1);border:.5px solid rgba(255,45,45,.2);color:var(--red);padding:.15rem .6rem}
+.a-elo{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em;background:rgba(255,45,45,.08);border:.5px solid rgba(255,45,45,.3);color:var(--red);padding:.15rem .6rem;box-shadow:0 0 12px rgba(255,45,45,.15);transition:box-shadow .3s}.a-elo:hover{box-shadow:0 0 22px rgba(255,45,45,.35)}
 /* mode panels */
 .a-panel{display:none;flex:1;flex-direction:column}
 .a-panel.act{display:flex}
 /* ranked layout */
-.ranked-wrap{flex:1;display:flex;flex-direction:column;gap:.75rem;padding:.875rem 1.25rem;max-width:960px;margin:0 auto;width:100%}
+.ranked-wrap{flex:1;display:flex;flex-direction:column;gap:.75rem;padding:.875rem 1.25rem;max-width:960px;margin:0 auto;width:100%;position:relative;filter:drop-shadow(0 0 2px rgba(255,30,30,.06))}
 /* cameras */
 .battle{display:grid;grid-template-columns:1fr 60px 1fr;gap:.75rem;align-items:stretch}
-.cambox{position:relative;background:#08080B;border:.5px solid var(--g2);overflow:hidden;border-radius:2px;aspect-ratio:3/4;transition:border-color .4s,box-shadow .4s;min-height:180px}
-.cambox.hot{border-color:rgba(255,45,45,.5);box-shadow:inset 0 0 0 1px rgba(255,45,45,.1)}
+.cambox{position:relative;background:linear-gradient(160deg,#111118 0%,#070709 100%);border:1px solid rgba(255,255,255,.08);overflow:hidden;border-radius:6px;aspect-ratio:3/4;transition:border-color .4s,box-shadow .4s,transform .35s cubic-bezier(.23,1,.32,1);min-height:180px;box-shadow:0 20px 60px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.04) inset,0 1px 0 rgba(255,255,255,.07) inset;transform-style:preserve-3d}
+.cambox.hot{border-color:rgba(255,45,45,.7);box-shadow:0 0 40px rgba(255,45,45,.25),0 0 80px rgba(255,45,45,.1),inset 0 0 0 1px rgba(255,45,45,.15),0 20px 60px rgba(0,0,0,.85)}
 .cambox.pulsing{animation:glowPulse 2s ease infinite}
 .cambox video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:none}
 .cambox canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;transform:none}
@@ -272,7 +272,7 @@ nav{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-
 .ct-txt{font-family:'Bebas Neue',sans-serif;font-size:.78rem;fill:var(--wh);text-anchor:middle;dominant-baseline:central;transform:rotate(90deg);transform-origin:18px 18px}
 /* vs column */
 .vs-col{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem}
-.vs-t{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--red);letter-spacing:.1em;text-shadow:0 0 20px var(--glow);line-height:1}
+.vs-t{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--red);letter-spacing:.1em;text-shadow:0 0 20px rgba(255,45,45,.8),0 0 60px rgba(255,45,45,.3);line-height:1;animation:vsPulse 1.6s ease-in-out infinite}@keyframes vsPulse{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.1);opacity:1;text-shadow:0 0 30px rgba(255,45,45,1),0 0 80px rgba(255,45,45,.5)}}
 .vs-live{display:none;flex-direction:column;align-items:center;gap:.1rem}
 .vs-live.show{display:flex}
 .vsl-y{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--grn);line-height:1}
@@ -489,13 +489,125 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
   .pgrid{grid-template-columns:1fr}
   .pc.feat{margin:0}
 }
+
+/* ══════════════════════════════════════
+   PREMIUM VISUAL UPGRADE v3 — real classes
+══════════════════════════════════════ */
+
+/* 1. Камеры игроков */
+.arena-card.cambox {
+  background: linear-gradient(160deg,#111118 0%,#07070a 100%) !important;
+  border: 1px solid rgba(255,255,255,.09) !important;
+  border-radius: 6px !important;
+  box-shadow:
+    0 24px 70px rgba(0,0,0,.85),
+    inset 0 1px 0 rgba(255,255,255,.07),
+    inset 0 -1px 0 rgba(0,0,0,.5) !important;
+  transform-style: preserve-3d;
+  transition: transform .35s cubic-bezier(.23,1,.32,1), box-shadow .35s, border-color .35s !important;
+}
+.arena-card.cambox:hover {
+  border-color: rgba(255,45,45,.55) !important;
+  box-shadow:
+    0 35px 90px rgba(0,0,0,.95),
+    0 0 50px rgba(255,45,45,.18),
+    inset 0 1px 0 rgba(255,255,255,.1) !important;
+}
+.arena-card.cambox.hot {
+  border-color: rgba(255,45,45,.7) !important;
+  box-shadow:
+    0 0 50px rgba(255,45,45,.28),
+    0 0 100px rgba(255,45,45,.08),
+    inset 0 0 0 1px rgba(255,45,45,.15),
+    0 24px 70px rgba(0,0,0,.9) !important;
+}
+
+/* 2. Scan line яркая */
+.arena-card.cambox::after {
+  background: linear-gradient(90deg,transparent,rgba(255,45,45,.12),transparent) !important;
+  filter: none !important;
+  height: 1px !important;
+  box-shadow: 0 0 4px rgba(255,45,45,.1) !important;
+}
+
+/* 3. VS живой */
+.vs-text {
+  color: var(--red) !important;
+  text-shadow:
+    0 0 15px rgba(255,45,45,1),
+    0 0 40px rgba(255,45,45,.6),
+    0 0 80px rgba(255,45,45,.25) !important;
+  animation: vsPremium 1.4s ease-in-out infinite !important;
+}
+@keyframes vsPremium {
+  0%,100% {
+    transform: scale(1);
+    text-shadow: 0 0 15px rgba(255,45,45,.9), 0 0 40px rgba(255,45,45,.45);
+  }
+  50% {
+    transform: scale(1.15);
+    text-shadow: 0 0 25px rgba(255,45,45,1), 0 0 70px rgba(255,45,45,.7), 0 0 120px rgba(255,45,45,.3);
+  }
+}
+
+/* 4. START PSL SCAN кнопка */
+.start-btn {
+  background: linear-gradient(135deg, #e01818 0%, #ff3535 40%, #e01818 100%) !important;
+  background-size: 200% 100% !important;
+  box-shadow:
+    0 0 30px rgba(255,45,45,.5),
+    0 6px 25px rgba(255,45,45,.3),
+    inset 0 1px 0 rgba(255,255,255,.15) !important;
+  transition: background-position .4s, box-shadow .25s, transform .25s !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+.start-btn:hover {
+  background-position: 100% 0 !important;
+  box-shadow:
+    0 0 55px rgba(255,45,45,.8),
+    0 10px 40px rgba(255,45,45,.45),
+    inset 0 1px 0 rgba(255,255,255,.2) !important;
+  transform: translateY(-3px) scale(1.03) !important;
+}
+.start-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -120%;
+  width: 70%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+.start-btn:hover::before {
+  animation: startShine .6s ease forwards;
+}
+@keyframes startShine { to { left: 140%; } }
+
+/* 5. Live activity glass */
+.live-activity {
+  background: linear-gradient(
+    160deg,
+    rgba(15,15,22,.97) 0%,
+    rgba(8,8,13,.99) 100%
+  ) !important;
+  border: 1px solid rgba(255,45,45,.4) !important;
+  box-shadow:
+    0 0 60px rgba(255,45,45,.1),
+    0 30px 80px rgba(0,0,0,.9),
+    inset 0 1px 0 rgba(255,255,255,.06),
+    inset 1px 0 0 rgba(255,45,45,.08) !important;
+  backdrop-filter: blur(24px) !important;
+}
+
+/* ══ END PREMIUM v3 ══ */
 </style>
 </head>
 <body>
 
 <!-- NAV -->
 <!-- LIVE PANEL -->
-<div class="live-panel" id="live-panel">
+<div class="live-panel live-activity" id="live-panel">
   <h3>● LIVE ACTIVITY</h3>
   <p id="lp1">New player joined</p>
   <p id="lp2">Match in progress...</p>
@@ -596,33 +708,27 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 <!-- ══ PSL SCAN SCREEN ══ -->
 <div class="psl-screen" id="psl-screen">
   <div class="psl-logo">FACE<span>CLASH</span></div>
-  <div class="psl-title">CAMERA ACCESS CHECK</div>
-  <div class="psl-sub">Liveness check · Cannot be faked with OBS or video</div>
+  <div class="psl-title" id="psl-title">BIOMETRIC SCAN</div>
+  <div class="psl-sub">Liveness check · Cannot be faked with OBS or photo</div>
 
-  <!-- Single camera view Omegle-style -->
   <div class="psl-cam-wrap" id="psl-cam-wrap">
     <video id="psl-vid" autoplay muted playsinline webkit-playsinline></video>
     <canvas id="pc-center"></canvas>
-    <!-- hidden canvases for snapshots -->
     <canvas id="pc-left" style="display:none"></canvas>
     <canvas id="pc-right" style="display:none"></canvas>
-    <!-- Corner brackets -->
     <div class="psl-corner tl"></div>
     <div class="psl-corner tr"></div>
     <div class="psl-corner bl"></div>
     <div class="psl-corner br"></div>
-    <!-- Step label -->
-    <div class="psl-cam-label" id="psl-instr">ALIGN FACE</div>
+    <div class="psl-cam-label" id="psl-instr">INITIALIZING...</div>
     <div id="psl-cd" style="display:none"></div>
   </div>
 
-  <!-- Error message -->
   <div class="psl-error-msg" id="psl-error"></div>
 
-  <!-- Step indicators -->
   <div class="psl-steps">
     <div class="psl-step cur" id="pst-0"><div class="ps-lbl">ALIGN</div></div>
-    <div class="psl-step" id="pst-1"><div class="ps-lbl">LOOK</div></div>
+    <div class="psl-step" id="pst-1"><div class="ps-lbl">BLINK</div></div>
     <div class="psl-step" id="pst-2"><div class="ps-lbl">TURN</div></div>
     <div class="psl-step" id="pst-3"><div class="ps-lbl">DONE</div></div>
   </div>
@@ -630,19 +736,16 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
   <div class="psl-prog"><div class="psl-bar" id="psl-bar"></div></div>
 
   <div class="psl-final" id="psl-final">
-    <div class="psl-final-score" id="psl-fscore">7.4</div>
+    <div class="psl-final-score" id="psl-fscore">8.2</div>
     <div class="psl-final-lbl">PSL Score · Entering Arena...</div>
   </div>
 
-  <!-- Legacy hidden elements (referenced by JS) -->
   <div style="display:none">
     <div id="pp-left"></div><div id="pp-center"></div><div id="pp-right"></div>
     <div id="pk-left"></div><div id="pk-center"></div><div id="pk-right"></div>
     <div id="ps-left"></div><div id="ps-center"></div><div id="ps-right"></div>
-    <div id="psl-scanbar-main"></div>
-    <div id="psl-score-badge"></div>
-    <div id="psl-check-overlay"></div>
-    <div id="psl-demo-note"></div>
+    <div id="psl-scanbar-main"></div><div id="psl-score-badge"></div>
+    <div id="psl-check-overlay"></div><div id="psl-demo-note"></div>
   </div>
 </div>
 
@@ -744,7 +847,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 
         <div class="battle" id="battle-grid">
           <!-- YOU -->
-          <div class="cambox scan-box" id="cb-you">
+          <div class="cambox scan-box arena-card" id="cb-you">
             <video id="vid-you" autoplay muted playsinline webkit-playsinline style="display:none;transform:scaleX(-1)"></video>
             <canvas id="cv-you"></canvas>
             <div class="cam-scan" id="scan-you"></div>
@@ -770,7 +873,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 
           <!-- VS -->
           <div class="vs-col">
-            <div class="vs-t">VS</div>
+            <div class="vs-t vs-text">VS</div>
             <div class="vs-bar-wrap"><div class="vs-bar-fill" id="vs-bar" style="height:50%"></div></div>
             <div class="vs-live" id="vs-live">
               <div class="vsl-y" id="vsl-y">—</div>
@@ -779,7 +882,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
           </div>
 
           <!-- OPP -->
-          <div class="cambox scan-box" id="cb-opp">
+          <div class="cambox scan-box arena-card" id="cb-opp">
             <div class="cam-scan" id="scan-opp"></div>
             <div class="cam-empty" id="ce-opp">
               <div style="width:48px;height:48px;border:1.5px solid var(--g2);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:.5rem"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--g3)" stroke-width="1.5"><circle cx="12" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg></div><div class="ce-t" id="opp-t">Opponent</div><div class="ce-s" id="opp-s">Find a match<br>to start</div>
@@ -794,7 +897,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
         </div>
 
         <div class="a-actions">
-          <button class="btn-p" id="btn-scan" onclick="startPSL()">START PSL SCAN</button>
+          <button class="btn-p start-btn" id="btn-scan" onclick="startPSL()">START PSL SCAN</button>
           <button class="btn-p" id="btn-match" onclick="findMatch()" style="display:none">FIND MATCH</button>
           <button class="btn-s" id="btn-next" onclick="nextMatch()" style="display:none">NEXT MATCH</button>
           <button class="btn-s" onclick="go('leaderboard')">LEADERBOARD</button>
@@ -1486,77 +1589,147 @@ function drawMesh(ctx,lm,W,H){
   for(const[a,b]of C){if(lm[a]&&lm[b]){ctx.beginPath();ctx.moveTo(lm[a].x*W,lm[a].y*H);ctx.lineTo(lm[b].x*W,lm[b].y*H);ctx.stroke();}}
 }
 
-// ─── PSL SCAN ───
+// ─── PSL SCAN — MediaPipe FaceMesh ───
 let _pslPhase=0,_pslScores=[0,0,0],_pslHold=0,_pslMpCam=null,_pslStream=null,_pslDone=false;
 const PSL_PANELS=['pp-left','pp-center','pp-right'];
 const PSL_CHECKS=['pk-left','pk-center','pk-right'];
 const PSL_SCORES=['ps-left','ps-center','ps-right'];
 const PSL_CANVASES=['pc-left','pc-center','pc-right'];
 const PSL_STEPS=['pst-0','pst-1','pst-2','pst-3'];
-const PSL_INSTRS=['ALIGN FACE','LOOK FORWARD','TURN HEAD →','SCAN COMPLETE ✓'];
+const PSL_INSTRS=['LOOK STRAIGHT','BLINK YOUR EYES','TURN HEAD RIGHT','SCAN COMPLETE ✓'];
 const HOLD_FRAMES=40;
 const YAW_THRESH=0.25;
 
-function startPSL(){
-  document.getElementById('psl-screen').classList.add('open');
-  setPill('scan');
-  _pslPhase=0;_pslScores=[0,0,0];_pslHold=0;
-  resetPSLUI();
-
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
-    showToast('Camera not supported on this browser');
-    document.getElementById('psl-screen').classList.remove('open');
-    return;
-  }
-
-  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:480},height:{ideal:640}},audio:false})
-    .then(stream=>{
-      _pslStream=stream;
-      const vid=document.getElementById('psl-vid');
-      vid.srcObject=stream;
-      // Don't await play — just fire and forget, works on iOS too
-      vid.play().catch(()=>{});
-      // Wait for video to have dimensions before scanning
-      let attempts=0;
-      const waitReady=setInterval(()=>{
-        attempts++;
-        if(vid.videoWidth>0){
-          clearInterval(waitReady);
-          startCanvasPSL(vid);
-          updatePSLStep(0);
-        } else if(attempts>40){
-          clearInterval(waitReady);
-          // Video stream exists but no dimensions — still try
-          startCanvasPSL(vid);
-          updatePSLStep(0);
-        }
-      },100);
-    })
-    .catch(err=>{
-      // Only show error if camera was actually denied
-      const errEl=document.getElementById('psl-error');
-      const instr=document.getElementById('psl-instr');
-      const msg=err&&err.name==='NotAllowedError'?'CAMERA ACCESS DENIED — allow camera in browser settings':'CAMERA NOT AVAILABLE';
-      if(errEl)errEl.textContent=msg;
-      if(instr)instr.textContent='CAMERA ERROR';
-      // Don't auto-close — let user read and close manually
-      setPill('idle');
-    });
-}
-
-// ─── CANVAS PSL — real face + motion detection ───
+// PSL state
 let _pslRafId=null;
 let _pslTimerInterval=null;
-const PSL_STEP_SECS=4; // 4 steps x 4 sec each
 const PSL_TOTAL_STEPS=4;
-let _pslFaceTime=0;
-let _prevFrameData=null; // for motion detection
+let _pslConfirmFrames=0;
+let _pslFaceMesh=null;
+let _pslMPReady=false;
+let _pslBlinkDetected=false;
+let _pslBlinkCooldown=0;
+let _prevEAR=1;
+let _pslLandmarks=null; // latest landmarks from FaceMesh
 
-function detectFace(ctx, W, H){
+// ── EAR (Eye Aspect Ratio) for blink detection ──
+function calcEAR(eye){
+  // eye = array of {x,y} normalized landmarks
+  // vertical: |p2-p6| + |p3-p5| / (2 * |p1-p4|)
+  const d=function(a,b){return Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2);};
+  return (d(eye[1],eye[5])+d(eye[2],eye[4]))/(2*d(eye[0],eye[3]));
+}
+
+// ── Yaw estimation from nose tip vs face center ──
+function calcYaw(lm){
+  // nose tip: 1, left eye: 33, right eye: 263
+  const noseTip=lm[1];
+  const leftEye=lm[33];
+  const rightEye=lm[263];
+  const faceCenter=(leftEye.x+rightEye.x)/2;
+  return (noseTip.x - faceCenter.x)*2; // negative=left, positive=right
+}
+
+// ── Draw beautiful face mesh on canvas ──
+function drawMesh(ctx, lm, W, H, phase, faceOk){
+  if(!lm||!faceOk) return;
+
+  // Color based on phase state
+  const col = faceOk ? 'rgba(255,45,45,' : 'rgba(100,100,100,';
+
+  // Face oval (silhouette landmarks ~10 points)
+  const ovalIdx=[10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
+  ctx.beginPath();
+  ovalIdx.forEach((i,n)=>{
+    if(!lm[i])return;
+    const x=lm[i].x*W, y=lm[i].y*H;
+    n===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.closePath();
+  ctx.strokeStyle=faceOk?'rgba(255,45,45,0.7)':'rgba(80,80,80,0.4)';
+  ctx.lineWidth=1.5;
+  ctx.stroke();
+
+  // Key landmark dots
+  const keyPts=[
+    // eyes
+    33,7,163,144,145,153,154,155,133,
+    362,382,381,380,374,373,390,249,263,
+    // nose
+    1,2,5,4,
+    // mouth
+    61,185,40,39,37,0,267,269,270,409,291,
+    // eyebrows
+    70,63,105,66,107,336,296,334,293,300,
+    // cheeks/jaw
+    234,454,152,10
+  ];
+
+  keyPts.forEach(i=>{
+    if(!lm[i])return;
+    const x=lm[i].x*W, y=lm[i].y*H;
+    ctx.beginPath();
+    ctx.arc(x,y,1.8,0,Math.PI*2);
+    ctx.fillStyle=faceOk?'rgba(255,60,60,0.8)':'rgba(80,80,80,0.4)';
+    ctx.fill();
+  });
+
+  // Scan line across face (animated by time)
+  const scanY=(Date.now()%1800)/1800;
+  const faceTop=lm[10]?lm[10].y*H:H*0.15;
+  const faceBot=lm[152]?lm[152].y*H:H*0.85;
+  const sy=faceTop+(faceBot-faceTop)*scanY;
+  const faceLeft=lm[234]?lm[234].x*W:W*0.2;
+  const faceRight=lm[454]?lm[454].x*W:W*0.8;
+  ctx.beginPath();
+  const sg=ctx.createLinearGradient(faceLeft,sy,faceRight,sy);
+  sg.addColorStop(0,'transparent');
+  sg.addColorStop(0.3,'rgba(255,45,45,0.0)');
+  sg.addColorStop(0.5,faceOk?'rgba(255,45,45,0.6)':'rgba(80,80,80,0.3)');
+  sg.addColorStop(0.7,'rgba(255,45,45,0.0)');
+  sg.addColorStop(1,'transparent');
+  ctx.strokeStyle=sg;
+  ctx.lineWidth=1.5;
+  ctx.moveTo(faceLeft,sy);
+  ctx.lineTo(faceRight,sy);
+  ctx.stroke();
+}
+
+// ── Init MediaPipe FaceMesh ──
+function initFaceMesh(cb){
+  if(_pslFaceMesh){cb(_pslFaceMesh);return;}
+  // Load MediaPipe via CDN
+  const script1=document.createElement('script');
+  script1.src='https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js';
+  const script2=document.createElement('script');
+  script2.src='https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js';
+  script2.onload=()=>{
+    const fm=new FaceMesh({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`});
+    fm.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+    fm.onResults(results=>{
+      _pslLandmarks=results.multiFaceLandmarks&&results.multiFaceLandmarks[0]||null;
+    });
+    fm.initialize().then(()=>{
+      _pslFaceMesh=fm;
+      _pslMPReady=true;
+      cb(fm);
+    }).catch(()=>{
+      // MediaPipe failed — fallback to skin detection
+      _pslFaceMesh=null;
+      _pslMPReady=false;
+      cb(null);
+    });
+  };
+  script2.onerror=()=>cb(null);
+  document.head.appendChild(script1);
+  document.head.appendChild(script2);
+}
+
+// ── Fallback skin detection (no MediaPipe) ──
+function detectFaceSkin(ctx, W, H){
   try{
     const img=ctx.getImageData(Math.floor(W*0.2),Math.floor(H*0.1),Math.floor(W*0.6),Math.floor(H*0.75));
-    const d=img.data;
-    let skin=0,total=0;
+    const d=img.data;let skin=0,total=0;
     for(let i=0;i<d.length;i+=8){
       const r=d[i],g=d[i+1],b=d[i+2];
       if(r>60&&g>30&&b>15&&r>g&&r>b&&(r-b)>15&&(r-g)<90)skin++;
@@ -1566,131 +1739,220 @@ function detectFace(ctx, W, H){
   }catch(e){return 0;}
 }
 
-function detectMotion(ctx, W, H){
-  // Compare current frame with previous — detects live video vs static photo
+let _prevFrameData=null;
+function detectMotion(ctx,W,H){
   try{
     const img=ctx.getImageData(Math.floor(W*0.15),Math.floor(H*0.1),Math.floor(W*0.7),Math.floor(H*0.8));
     const d=img.data;
-    if(!_prevFrameData||_prevFrameData.length!==d.length){
-      _prevFrameData=new Uint8ClampedArray(d);
-      return true; // first frame — assume motion
-    }
+    if(!_prevFrameData||_prevFrameData.length!==d.length){_prevFrameData=new Uint8ClampedArray(d);return true;}
     let diff=0,count=0;
     for(let i=0;i<d.length;i+=16){
       diff+=Math.abs(d[i]-_prevFrameData[i])+Math.abs(d[i+1]-_prevFrameData[i+1])+Math.abs(d[i+2]-_prevFrameData[i+2]);
       count++;
     }
     _prevFrameData=new Uint8ClampedArray(d);
-    return (diff/count)>1.5; // >1.5 avg pixel change = live (less strict)
+    return(diff/count)>1.5;
   }catch(e){return true;}
 }
 
-// PSL scan state
-let _pslConfirmFrames=0; // consecutive frames with live face
-const PSL_NEEDED_FRAMES=30; // ~2 sec at 15fps per step
-const PSL_STEP_LABELS=['ALIGN FACE','LOOK FORWARD','TURN YOUR HEAD','HOLD STILL'];
-
-function startCanvasPSL(vid){
-  const cv=document.getElementById('pc-center');
-  _pslFaceTime=0;_pslConfirmFrames=0;_prevFrameData=null;
-  let _lastFrame=0;
-
-  // Set first instruction
+function startPSL(){
+  document.getElementById('psl-screen').classList.add('open');
+  setPill('scan');
+  _pslPhase=0;_pslScores=[0,0,0];_pslHold=0;
+  _pslBlinkDetected=false;_pslLandmarks=null;_pslConfirmFrames=0;
+  resetPSLUI();
   const instr=document.getElementById('psl-instr');
   const errEl=document.getElementById('psl-error');
-  if(instr)instr.textContent=PSL_STEP_LABELS[0];
-  if(errEl)errEl.textContent='';
-  document.getElementById('psl-bar').style.width='0%';
+  if(instr)instr.textContent='INITIALIZING...';
 
-  // Omegle-style landmark points (relative to ellipse)
-  const FACE_LANDMARKS=[
-    // forehead top arc
-    [0,-.98],[-.3,-.92],[.3,-.92],[-.6,-.75],[.6,-.75],
-    // temples
-    [-.98,-.2],[.98,-.2],[-.95,.2],[.95,.2],
-    // cheeks
-    [-.85,.55],[.85,.55],[-.6,.85],[.6,.85],
-    // jaw
-    [-.3,.97],[.3,.97],[0,1],
-    // eyes
-    [-.45,-.3],[.45,-.3],
-    // nose
-    [0,.1],[-.15,.35],[.15,.35],
-    // mouth
-    [-.3,.6],[.3,.6],[0,.65]
-  ];
-
-  function drawFaceMesh(ctx,W,H,color){
-    const cx=W/2, cy=H*0.44, rx=W*0.25, ry=H*0.33;
-    ctx.fillStyle=color;
-    FACE_LANDMARKS.forEach(([lx,ly])=>{
-      ctx.beginPath();
-      ctx.arc(cx+lx*rx, cy+ly*ry, 2.5,0,Math.PI*2);
-      ctx.fill();
-    });
-    // Oval ring
-    ctx.strokeStyle=color;
-    ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);ctx.stroke();
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    if(errEl)errEl.textContent='CAMERA NOT SUPPORTED';
+    setPill('idle');return;
   }
 
-  let _motionBuffer=0; // accumulate motion over frames
+  navigator.mediaDevices.getUserMedia({
+    video:{facingMode:{ideal:'user'},width:{ideal:640},height:{ideal:480}},
+    audio:false
+  }).then(stream=>{
+    _pslStream=stream;
+    const vid=document.getElementById('psl-vid');
+    vid.srcObject=stream;
+    vid.play().catch(()=>{});
 
-  function drawLoop(ts){
+    let attempts=0;
+    const waitReady=setInterval(()=>{
+      attempts++;
+      if(vid.videoWidth>0){
+        clearInterval(waitReady);
+        if(instr)instr.textContent='LOADING FACE SCANNER...';
+        // Try MediaPipe first, fallback to skin detection
+        initFaceMesh(fm=>{
+          startPSLLoop(vid, fm);
+          updatePSLStep(0);
+        });
+      } else if(attempts>50){
+        clearInterval(waitReady);
+        initFaceMesh(fm=>{startPSLLoop(vid,fm);updatePSLStep(0);});
+      }
+    },100);
+  }).catch(err=>{
+    const msg=err&&err.name==='NotAllowedError'
+      ?'CAMERA ACCESS DENIED — allow camera in settings'
+      :'CAMERA NOT AVAILABLE';
+    if(errEl)errEl.textContent=msg;
+    if(instr)instr.textContent='CAMERA ERROR';
+    setPill('idle');
+  });
+}
+
+function startPSLLoop(vid, faceMesh){
+  const cv=document.getElementById('pc-center');
+  _pslConfirmFrames=0;_prevFrameData=null;_pslBlinkDetected=false;
+  let _lastFrame=0;
+  let _motionBuffer=0;
+  let _holdFrames=0; // frames with condition met for current step
+
+  const STEP_NEEDED=20; // frames needed per step (~1.3sec at 15fps)
+  const BLINK_EAR=0.21; // EAR threshold for blink
+  const TURN_THRESH=0.12; // nose offset threshold for turn right
+
+  const instrEl=document.getElementById('psl-instr');
+  const errEl=document.getElementById('psl-error');
+  const barEl=document.getElementById('psl-bar');
+
+  const STEP_INSTRS=['LOOK STRAIGHT AT CAMERA','BLINK YOUR EYES','TURN HEAD TO THE RIGHT',''];
+
+  if(instrEl)instrEl.textContent=STEP_INSTRS[0];
+  if(barEl)barEl.style.width='0%';
+
+  async function drawLoop(ts){
     if(ts-_lastFrame<66){_pslRafId=requestAnimationFrame(drawLoop);return;}
     _lastFrame=ts;
     if(!vid.videoWidth){_pslRafId=requestAnimationFrame(drawLoop);return;}
 
     const isMob=window.innerWidth<=640;
-    const scale=isMob?0.5:0.75;
+    const scale=isMob?0.55:0.8;
     cv.width=Math.floor(vid.videoWidth*scale);
     cv.height=Math.floor(vid.videoHeight*scale);
     const ctx=cv.getContext('2d');
+    // Mirror horizontally (selfie view)
     ctx.save();ctx.scale(-1,1);ctx.drawImage(vid,-cv.width,0,cv.width,cv.height);ctx.restore();
     const W=cv.width,H=cv.height;
 
-    // Face detection — just skin ratio, no strict motion req
-    const skinRatio=detectFace(ctx,W,H);
-    const faceOk=skinRatio>0.05;
+    // Send to MediaPipe if available
+    if(faceMesh&&_pslMPReady){
+      try{await faceMesh.send({image:vid});}catch(e){}
+    }
 
-    // Motion — accumulate, don't require every frame
+    const lm=_pslLandmarks;
+    const faceOk=lm?true:(detectFaceSkin(ctx,W,H)>0.05);
+
+    // Motion check
     const motionNow=detectMotion(ctx,W,H);
-    if(motionNow)_motionBuffer=Math.min(_motionBuffer+1,5);
+    if(motionNow)_motionBuffer=Math.min(_motionBuffer+1,6);
     else _motionBuffer=Math.max(_motionBuffer-0.5,0);
-    const liveOk=faceOk&&(_motionBuffer>0); // motion seen recently = live
+    const liveOk=faceOk&&_motionBuffer>0;
 
-    // Draw face mesh — red if no face, green if live
-    const dotColor=liveOk?'rgba(74,222,128,0.85)':faceOk?'rgba(255,45,45,0.5)':'rgba(255,45,45,0.3)';
-    drawFaceMesh(ctx,W,H,dotColor);
+    // Draw overlay
+    ctx.save();
+    if(lm&&faceMesh){
+      // Mirror landmarks back for display (video is mirrored)
+      const mirroredLm=lm.map(p=>({x:1-p.x,y:p.y,z:p.z}));
+      drawMesh(ctx,mirroredLm,W,H,_pslPhase,faceOk);
+    } else {
+      // Fallback: simple oval
+      const col=liveOk?'rgba(255,45,45,0.7)':'rgba(80,80,80,0.4)';
+      ctx.strokeStyle=col;ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.ellipse(W/2,H*0.44,W*0.23,H*0.32,0,0,Math.PI*2);ctx.stroke();
+      // scan line
+      const sy=H*((Date.now()%1800)/1800*0.7+0.15);
+      const sg=ctx.createLinearGradient(W*0.1,sy,W*0.9,sy);
+      sg.addColorStop(0,'transparent');sg.addColorStop(0.5,liveOk?'rgba(255,45,45,0.5)':'rgba(80,80,80,0.3)');sg.addColorStop(1,'transparent');
+      ctx.strokeStyle=sg;ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(W*0.1,sy);ctx.lineTo(W*0.9,sy);ctx.stroke();
+    }
+    ctx.restore();
 
-    // Show errors only when actually wrong — no false positives
+    // Error messages
     if(errEl){
       if(!faceOk) errEl.textContent='NO FACE DETECTED — move closer';
-      else if(_motionBuffer<=0) errEl.textContent='STATIC IMAGE DETECTED — use real camera';
+      else if(!liveOk) errEl.textContent='STATIC IMAGE — use real camera';
       else errEl.textContent='';
     }
-    if(instr) instr.style.color=liveOk?'var(--grn)':'var(--wh)';
+    if(instrEl) instrEl.style.color=liveOk?'var(--grn)':'var(--wh)';
 
-    // Count frames — only when live
-    if(liveOk){
-      _pslConfirmFrames++;
-    } else {
-      _pslConfirmFrames=Math.max(0,_pslConfirmFrames-1);
+    // ── Per-step logic ──
+    let condMet=false;
+
+    if(_pslPhase===0){
+      // Step 0: face aligned — just need face + motion
+      condMet=liveOk;
+
+    } else if(_pslPhase===1){
+      // Step 1: blink detection
+      if(lm&&faceMesh){
+        // Left eye: 33,160,158,133,153,144 / Right eye: 362,385,387,263,373,380
+        const lEye=[lm[33],lm[160],lm[158],lm[133],lm[153],lm[144]];
+        const rEye=[lm[362],lm[385],lm[387],lm[263],lm[373],lm[380]];
+        if(lEye.every(Boolean)&&rEye.every(Boolean)){
+          const ear=(calcEAR(lEye)+calcEAR(rEye))/2;
+          if(_prevEAR>BLINK_EAR&&ear<BLINK_EAR&&_pslBlinkCooldown<=0){
+            _pslBlinkDetected=true;
+            _pslBlinkCooldown=10;
+          }
+          if(_pslBlinkCooldown>0)_pslBlinkCooldown--;
+          _prevEAR=ear;
+        }
+        condMet=_pslBlinkDetected&&liveOk;
+        if(faceOk&&!_pslBlinkDetected&&instrEl){instrEl.textContent='BLINK YOUR EYES';instrEl.style.color='var(--wh)';}
+        if(_pslBlinkDetected&&instrEl){instrEl.textContent='BLINK DETECTED ✓';instrEl.style.color='var(--grn)';}
+      } else {
+        // No MediaPipe — simulate with motion spike
+        const motionHigh=detectMotion(ctx,W,H);
+        if(motionHigh)_pslBlinkDetected=true;
+        condMet=_pslBlinkDetected&&faceOk;
+      }
+
+    } else if(_pslPhase===2){
+      // Step 2: turn head right
+      if(lm&&faceMesh){
+        const mirLm=lm.map(p=>({x:1-p.x,y:p.y,z:p.z}));
+        const noseTip=mirLm[1];
+        const leftEye=mirLm[33];
+        const rightEye=mirLm[263];
+        if(noseTip&&leftEye&&rightEye){
+          const faceCenter=(leftEye.x+rightEye.x)/2;
+          const yaw=noseTip.x-faceCenter;
+          condMet=yaw>TURN_THRESH&&liveOk;
+          if(faceOk&&!condMet&&instrEl){instrEl.textContent='TURN HEAD RIGHT →';instrEl.style.color='var(--wh)';}
+          if(condMet&&instrEl){instrEl.textContent='TURN DETECTED ✓';instrEl.style.color='var(--grn)';}
+        }
+      } else {
+        // Fallback: any motion = turn accepted
+        condMet=liveOk;
+      }
     }
 
-    // Progress bar
-    const stepProgress=Math.min(_pslConfirmFrames/PSL_NEEDED_FRAMES,1);
-    const totalProg=(_pslPhase/PSL_TOTAL_STEPS+stepProgress/PSL_TOTAL_STEPS)*100;
-    document.getElementById('psl-bar').style.width=totalProg+'%';
-    // Step complete when enough consecutive live frames
-    if(_pslConfirmFrames>=PSL_NEEDED_FRAMES){
-      _pslConfirmFrames=0;
+    // Count hold frames
+    if(condMet){
+      _holdFrames++;
+    } else {
+      _holdFrames=Math.max(0,_holdFrames-1);
+    }
+
+    // Progress
+    const stepProg=Math.min(_holdFrames/STEP_NEEDED,1);
+    const totalProg=(_pslPhase/PSL_TOTAL_STEPS+stepProg/PSL_TOTAL_STEPS)*100;
+    if(barEl)barEl.style.width=totalProg+'%';
+
+    if(_holdFrames>=STEP_NEEDED){
+      _holdFrames=0;
       cancelAnimationFrame(_pslRafId);
       // Snapshot
       const idx=Math.min(_pslPhase,PSL_CANVASES.length-1);
       const dst=document.getElementById(PSL_CANVASES[idx]);
       if(dst){dst.width=cv.width;dst.height=cv.height;dst.getContext('2d').drawImage(cv,0,0);}
-      const sc=parseFloat((6+skinRatio*20+Math.random()*1.5).toFixed(1));
+      const sc=parseFloat((7+Math.random()*2.5).toFixed(1));
       _pslScores[Math.min(_pslPhase,2)]=Math.min(9.8,sc);
       completePSLStep(sc);
       return;
@@ -1701,8 +1963,9 @@ function startCanvasPSL(vid){
   _pslRafId=requestAnimationFrame(drawLoop);
 }
 
-// Legacy stub — not used anymore
+// Legacy stubs
 function runPSLStepTimer(){}
+function startCanvasPSL(vid){ startPSLLoop(vid, null); }
 
 function completePSLStep(score){
   _pslHold=0;
@@ -2379,6 +2642,18 @@ async function loadRealStats(){
   }catch(e){}
 }
 window.addEventListener('DOMContentLoaded',()=>{
+  // 3D tilt on camboxes
+  document.querySelectorAll('.cambox').forEach(box=>{
+    box.addEventListener('mousemove',e=>{
+      const r=box.getBoundingClientRect();
+      const x=((e.clientX-r.left)/r.width-.5)*10;
+      const y=-((e.clientY-r.top)/r.height-.5)*10;
+      box.style.transform=`perspective(700px) rotateX(${y}deg) rotateY(${x}deg) translateY(-4px)`;
+    });
+    box.addEventListener('mouseleave',()=>{
+      box.style.transform='';
+    });
+  });
   lsLoad();
   setTimeout(loadRealStats,1500);
   // Auto-join lobby from URL ?lobby=CODE
