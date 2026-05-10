@@ -708,9 +708,10 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 <!-- ══ PSL SCAN SCREEN ══ -->
 <div class="psl-screen" id="psl-screen">
   <div class="psl-logo">FACE<span>CLASH</span></div>
-  <div class="psl-title" id="psl-title">BIOMETRIC SCAN</div>
+  <div class="psl-title">BIOMETRIC SCAN</div>
   <div class="psl-sub">Liveness check · Cannot be faked with OBS or photo</div>
 
+  <!-- Camera wrap -->
   <div class="psl-cam-wrap" id="psl-cam-wrap">
     <video id="psl-vid" autoplay muted playsinline webkit-playsinline></video>
     <canvas id="pc-center"></canvas>
@@ -720,32 +721,45 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
     <div class="psl-corner tr"></div>
     <div class="psl-corner bl"></div>
     <div class="psl-corner br"></div>
-    <div class="psl-cam-label" id="psl-instr">INITIALIZING...</div>
-    <div id="psl-cd" style="display:none"></div>
+    <!-- Big state instruction overlay -->
+    <div id="psl-state-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:16px;z-index:20;pointer-events:none">
+      <div id="psl-instr" style="font-family:'Bebas Neue',sans-serif;font-size:clamp(1.1rem,4vw,1.5rem);letter-spacing:.12em;background:rgba(0,0,0,.82);color:#fff;padding:.4rem 1.2rem;border-radius:3px;border:.5px solid rgba(255,45,45,.35);text-align:center;max-width:90%">INITIALIZING...</div>
+    </div>
+    <!-- Step counter top right -->
+    <div id="psl-step-counter" style="position:absolute;top:10px;right:10px;font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;background:rgba(0,0,0,.75);color:rgba(255,45,45,.9);padding:.2rem .5rem;border-radius:2px;z-index:20">1 / 3</div>
+    <!-- Timeout bar at top -->
+    <div id="psl-timeout-bar" style="position:absolute;top:0;left:0;height:2px;background:rgba(255,45,45,.6);width:100%;transform-origin:left;z-index:20;transition:transform linear"></div>
   </div>
 
-  <div class="psl-error-msg" id="psl-error"></div>
+  <!-- Error / status below camera -->
+  <div id="psl-error" style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--red);text-align:center;letter-spacing:.08em;min-height:1.2rem;margin:.4rem 0;text-transform:uppercase"></div>
 
+  <!-- Steps progress -->
   <div class="psl-steps">
     <div class="psl-step cur" id="pst-0"><div class="ps-lbl">ALIGN</div></div>
     <div class="psl-step" id="pst-1"><div class="ps-lbl">BLINK</div></div>
     <div class="psl-step" id="pst-2"><div class="ps-lbl">TURN</div></div>
     <div class="psl-step" id="pst-3"><div class="ps-lbl">DONE</div></div>
   </div>
-
   <div class="psl-prog"><div class="psl-bar" id="psl-bar"></div></div>
 
+  <!-- Retry button (hidden until needed) -->
+  <button id="psl-retry-btn" onclick="retryPSL()" style="display:none;margin-top:.75rem;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.12em;background:var(--red);color:#fff;border:none;padding:.6rem 1.75rem;cursor:crosshair">↺ RETRY SCAN</button>
+
+  <!-- Success -->
   <div class="psl-final" id="psl-final">
     <div class="psl-final-score" id="psl-fscore">8.2</div>
     <div class="psl-final-lbl">PSL Score · Entering Arena...</div>
   </div>
 
+  <!-- Legacy stubs -->
   <div style="display:none">
     <div id="pp-left"></div><div id="pp-center"></div><div id="pp-right"></div>
     <div id="pk-left"></div><div id="pk-center"></div><div id="pk-right"></div>
     <div id="ps-left"></div><div id="ps-center"></div><div id="ps-right"></div>
     <div id="psl-scanbar-main"></div><div id="psl-score-badge"></div>
     <div id="psl-check-overlay"></div><div id="psl-demo-note"></div>
+    <div id="psl-cd"></div>
   </div>
 </div>
 
@@ -1589,382 +1603,405 @@ function drawMesh(ctx,lm,W,H){
   for(const[a,b]of C){if(lm[a]&&lm[b]){ctx.beginPath();ctx.moveTo(lm[a].x*W,lm[a].y*H);ctx.lineTo(lm[b].x*W,lm[b].y*H);ctx.stroke();}}
 }
 
-// ─── PSL SCAN — MediaPipe FaceMesh ───
+// ─── PSL SCAN — State Machine ───
 let _pslPhase=0,_pslScores=[0,0,0],_pslHold=0,_pslMpCam=null,_pslStream=null,_pslDone=false;
 const PSL_PANELS=['pp-left','pp-center','pp-right'];
 const PSL_CHECKS=['pk-left','pk-center','pk-right'];
 const PSL_SCORES=['ps-left','ps-center','ps-right'];
 const PSL_CANVASES=['pc-left','pc-center','pc-right'];
 const PSL_STEPS=['pst-0','pst-1','pst-2','pst-3'];
-const PSL_INSTRS=['LOOK STRAIGHT','BLINK YOUR EYES','TURN HEAD RIGHT','SCAN COMPLETE ✓'];
-const HOLD_FRAMES=40;
-const YAW_THRESH=0.25;
+const PSL_INSTRS=['ALIGN FACE','LOOK FORWARD','TURN HEAD →','SCAN COMPLETE ✓'];
+const HOLD_FRAMES=40;const YAW_THRESH=0.25;
 
-// PSL state
-let _pslRafId=null;
-let _pslTimerInterval=null;
-const PSL_TOTAL_STEPS=4;
-let _pslConfirmFrames=0;
-let _pslFaceMesh=null;
-let _pslMPReady=false;
-let _pslBlinkDetected=false;
-let _pslBlinkCooldown=0;
-let _prevEAR=1;
-let _pslLandmarks=null; // latest landmarks from FaceMesh
+// State machine states: idle | camera-loading | look-straight | blink | look-right | success | error
+let _scanState='idle';
+let _scanRafId=null;
+let _scanStream=null;
+let _scanFM=null; // FaceMesh instance
+let _scanLM=null; // latest landmarks
+let _scanBlinkDone=false;
+let _scanTurnDone=false;
+let _prevEAR2=1;
+let _blinkCooldown=0;
+let _holdCount=0;
+let _timeoutId=null;
+let _prevFrameData=null;
+let _motionBuf=0;
 
-// ── EAR (Eye Aspect Ratio) for blink detection ──
-function calcEAR(eye){
-  // eye = array of {x,y} normalized landmarks
-  // vertical: |p2-p6| + |p3-p5| / (2 * |p1-p4|)
-  const d=function(a,b){return Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2);};
-  return (d(eye[1],eye[5])+d(eye[2],eye[4]))/(2*d(eye[0],eye[3]));
-}
+const STEP_FRAMES=18; // frames to hold before advancing
 
-// ── Yaw estimation from nose tip vs face center ──
-function calcYaw(lm){
-  // nose tip: 1, left eye: 33, right eye: 263
-  const noseTip=lm[1];
-  const leftEye=lm[33];
-  const rightEye=lm[263];
-  const faceCenter=(leftEye.x+rightEye.x)/2;
-  return (noseTip.x - faceCenter.x)*2; // negative=left, positive=right
-}
+// ── UI helpers ──
+function pslSetState(state){
+  _scanState=state;
+  const instrEl=document.getElementById('psl-instr');
+  const errEl=document.getElementById('psl-error');
+  const retryBtn=document.getElementById('psl-retry-btn');
+  const counter=document.getElementById('psl-step-counter');
+  if(retryBtn)retryBtn.style.display='none';
+  if(errEl)errEl.textContent='';
 
-// ── Draw beautiful face mesh on canvas ──
-function drawMesh(ctx, lm, W, H, phase, faceOk){
-  if(!lm||!faceOk) return;
-
-  // Color based on phase state
-  const col = faceOk ? 'rgba(255,45,45,' : 'rgba(100,100,100,';
-
-  // Face oval (silhouette landmarks ~10 points)
-  const ovalIdx=[10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
-  ctx.beginPath();
-  ovalIdx.forEach((i,n)=>{
-    if(!lm[i])return;
-    const x=lm[i].x*W, y=lm[i].y*H;
-    n===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-  });
-  ctx.closePath();
-  ctx.strokeStyle=faceOk?'rgba(255,45,45,0.7)':'rgba(80,80,80,0.4)';
-  ctx.lineWidth=1.5;
-  ctx.stroke();
-
-  // Key landmark dots
-  const keyPts=[
-    // eyes
-    33,7,163,144,145,153,154,155,133,
-    362,382,381,380,374,373,390,249,263,
-    // nose
-    1,2,5,4,
-    // mouth
-    61,185,40,39,37,0,267,269,270,409,291,
-    // eyebrows
-    70,63,105,66,107,336,296,334,293,300,
-    // cheeks/jaw
-    234,454,152,10
-  ];
-
-  keyPts.forEach(i=>{
-    if(!lm[i])return;
-    const x=lm[i].x*W, y=lm[i].y*H;
-    ctx.beginPath();
-    ctx.arc(x,y,1.8,0,Math.PI*2);
-    ctx.fillStyle=faceOk?'rgba(255,60,60,0.8)':'rgba(80,80,80,0.4)';
-    ctx.fill();
-  });
-
-  // Scan line across face (animated by time)
-  const scanY=(Date.now()%1800)/1800;
-  const faceTop=lm[10]?lm[10].y*H:H*0.15;
-  const faceBot=lm[152]?lm[152].y*H:H*0.85;
-  const sy=faceTop+(faceBot-faceTop)*scanY;
-  const faceLeft=lm[234]?lm[234].x*W:W*0.2;
-  const faceRight=lm[454]?lm[454].x*W:W*0.8;
-  ctx.beginPath();
-  const sg=ctx.createLinearGradient(faceLeft,sy,faceRight,sy);
-  sg.addColorStop(0,'transparent');
-  sg.addColorStop(0.3,'rgba(255,45,45,0.0)');
-  sg.addColorStop(0.5,faceOk?'rgba(255,45,45,0.6)':'rgba(80,80,80,0.3)');
-  sg.addColorStop(0.7,'rgba(255,45,45,0.0)');
-  sg.addColorStop(1,'transparent');
-  ctx.strokeStyle=sg;
-  ctx.lineWidth=1.5;
-  ctx.moveTo(faceLeft,sy);
-  ctx.lineTo(faceRight,sy);
-  ctx.stroke();
-}
-
-// ── Init MediaPipe FaceMesh ──
-function initFaceMesh(cb){
-  if(_pslFaceMesh){cb(_pslFaceMesh);return;}
-  // Load MediaPipe via CDN
-  const script1=document.createElement('script');
-  script1.src='https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js';
-  const script2=document.createElement('script');
-  script2.src='https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js';
-  script2.onload=()=>{
-    const fm=new FaceMesh({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`});
-    fm.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
-    fm.onResults(results=>{
-      _pslLandmarks=results.multiFaceLandmarks&&results.multiFaceLandmarks[0]||null;
-    });
-    fm.initialize().then(()=>{
-      _pslFaceMesh=fm;
-      _pslMPReady=true;
-      cb(fm);
-    }).catch(()=>{
-      // MediaPipe failed — fallback to skin detection
-      _pslFaceMesh=null;
-      _pslMPReady=false;
-      cb(null);
-    });
+  const states={
+    'idle':               {txt:'READY',         col:'#fff',  err:''},
+    'camera-loading':     {txt:'LOADING CAMERA...',col:'#aaa',err:''},
+    'look-straight':      {txt:'LOOK STRAIGHT',  col:'#fff',  err:'', step:'1 / 3'},
+    'no-face':            {txt:'LOOK STRAIGHT',  col:'#fff',  err:'FACE NOT DETECTED — MOVE CLOSER', step:'1 / 3'},
+    'blink':              {txt:'NOW BLINK',       col:'#FF2D2D',err:'', step:'2 / 3'},
+    'blink-waiting':      {txt:'BLINK YOUR EYES',col:'#FF2D2D',err:'OPEN EYES WIDE, THEN BLINK', step:'2 / 3'},
+    'look-right':         {txt:'TURN HEAD RIGHT →',col:'#FF2D2D',err:'', step:'3 / 3'},
+    'look-right-waiting': {txt:'TURN HEAD RIGHT →',col:'#FF2D2D',err:'SLOWLY TURN YOUR HEAD TO THE RIGHT', step:'3 / 3'},
+    'success':            {txt:'SCAN COMPLETE ✓', col:'#4ADE80',err:''},
+    'error':              {txt:'SCAN FAILED',     col:'#FF2D2D',err:'', retry:true},
+    'timeout':            {txt:'TIME OUT',        col:'#FF2D2D',err:'TOOK TOO LONG — TRY AGAIN', retry:true},
   };
-  script2.onerror=()=>cb(null);
-  document.head.appendChild(script1);
-  document.head.appendChild(script2);
+
+  const s=states[state]||states['idle'];
+  if(instrEl){instrEl.textContent=s.txt;instrEl.style.color=s.col;}
+  if(errEl)errEl.textContent=s.err||'';
+  if(counter&&s.step)counter.textContent=s.step;
+  if(retryBtn&&s.retry)retryBtn.style.display='inline-block';
 }
 
-// ── Fallback skin detection (no MediaPipe) ──
-function detectFaceSkin(ctx, W, H){
+function pslSetProgress(frac){
+  const bar=document.getElementById('psl-bar');
+  if(bar)bar.style.width=(frac*100)+'%';
+}
+
+// ── EAR blink ──
+function earCalc(pts){
+  const d=(a,b)=>Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2);
+  return (d(pts[1],pts[5])+d(pts[2],pts[4]))/(2*d(pts[0],pts[3]));
+}
+
+// ── Skin / motion fallbacks ──
+function skinRatio(ctx,W,H){
   try{
-    const img=ctx.getImageData(Math.floor(W*0.2),Math.floor(H*0.1),Math.floor(W*0.6),Math.floor(H*0.75));
-    const d=img.data;let skin=0,total=0;
-    for(let i=0;i<d.length;i+=8){
-      const r=d[i],g=d[i+1],b=d[i+2];
-      if(r>60&&g>30&&b>15&&r>g&&r>b&&(r-b)>15&&(r-g)<90)skin++;
-      total++;
-    }
-    return skin/total;
+    const img=ctx.getImageData(~~(W*.2),~~(H*.1),~~(W*.6),~~(H*.75));
+    const d=img.data;let s=0,t=0;
+    for(let i=0;i<d.length;i+=8){const r=d[i],g=d[i+1],b=d[i+2];if(r>60&&g>30&&b>15&&r>g&&r>b&&(r-b)>15&&(r-g)<90)s++;t++;}
+    return s/t;
   }catch(e){return 0;}
 }
-
-let _prevFrameData=null;
-function detectMotion(ctx,W,H){
+function motionCheck(ctx,W,H){
   try{
-    const img=ctx.getImageData(Math.floor(W*0.15),Math.floor(H*0.1),Math.floor(W*0.7),Math.floor(H*0.8));
+    const img=ctx.getImageData(~~(W*.15),~~(H*.1),~~(W*.7),~~(H*.8));
     const d=img.data;
     if(!_prevFrameData||_prevFrameData.length!==d.length){_prevFrameData=new Uint8ClampedArray(d);return true;}
-    let diff=0,count=0;
-    for(let i=0;i<d.length;i+=16){
-      diff+=Math.abs(d[i]-_prevFrameData[i])+Math.abs(d[i+1]-_prevFrameData[i+1])+Math.abs(d[i+2]-_prevFrameData[i+2]);
-      count++;
-    }
+    let diff=0,n=0;
+    for(let i=0;i<d.length;i+=16){diff+=Math.abs(d[i]-_prevFrameData[i])+Math.abs(d[i+1]-_prevFrameData[i+1])+Math.abs(d[i+2]-_prevFrameData[i+2]);n++;}
     _prevFrameData=new Uint8ClampedArray(d);
-    return(diff/count)>1.5;
+    return(diff/n)>1.5;
   }catch(e){return true;}
 }
 
+// ── Draw face mesh overlay ──
+function drawFaceOverlay(ctx,lm,W,H,faceFound){
+  if(!lm||!faceFound){
+    // Simple placeholder oval
+    ctx.strokeStyle='rgba(100,100,100,0.35)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.ellipse(W/2,H*.44,W*.22,H*.3,0,0,Math.PI*2);ctx.stroke();
+    return;
+  }
+  const col=_scanState==='success'?'rgba(74,222,128,':'rgba(255,45,45,';
+
+  // Face oval
+  const oval=[10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
+  ctx.beginPath();
+  oval.forEach((i,n)=>{if(!lm[i])return;n===0?ctx.moveTo(lm[i].x*W,lm[i].y*H):ctx.lineTo(lm[i].x*W,lm[i].y*H);});
+  ctx.closePath();
+  ctx.strokeStyle=col+'0.65)';ctx.lineWidth=1.5;ctx.stroke();
+
+  // Key dots
+  [33,263,1,61,291,199,10,152,234,454,70,300,105,334,159,386,145,374].forEach(i=>{
+    if(!lm[i])return;
+    ctx.beginPath();ctx.arc(lm[i].x*W,lm[i].y*H,2,0,Math.PI*2);
+    ctx.fillStyle=col+'0.8)';ctx.fill();
+  });
+
+  // Scan line across face bounds
+  const fT=lm[10]?lm[10].y*H:H*.15, fB=lm[152]?lm[152].y*H:H*.85;
+  const fL=lm[234]?lm[234].x*W:W*.2, fR=lm[454]?lm[454].x*W:W*.8;
+  const sy=fT+(fB-fT)*((Date.now()%1600)/1600);
+  const sg=ctx.createLinearGradient(fL,0,fR,0);
+  sg.addColorStop(0,'transparent');sg.addColorStop(.4,col+'0.0)');sg.addColorStop(.5,col+'0.55)');sg.addColorStop(.6,col+'0.0)');sg.addColorStop(1,'transparent');
+  ctx.strokeStyle=sg;ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(fL,sy);ctx.lineTo(fR,sy);ctx.stroke();
+
+  // Glow effect around face
+  if(faceFound){
+    ctx.save();
+    ctx.shadowColor=col+'0.6)';ctx.shadowBlur=18;
+    ctx.strokeStyle=col+'0.15)';ctx.lineWidth=8;
+    ctx.beginPath();
+    oval.forEach((i,n)=>{if(!lm[i])return;n===0?ctx.moveTo(lm[i].x*W,lm[i].y*H):ctx.lineTo(lm[i].x*W,lm[i].y*H);});
+    ctx.closePath();ctx.stroke();
+    ctx.restore();
+  }
+}
+
+// ── Load MediaPipe FaceMesh ──
+function loadFaceMesh(cb){
+  if(_scanFM){cb(_scanFM);return;}
+  const s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js';
+  s.onload=()=>{
+    try{
+      const fm=new FaceMesh({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${f}`});
+      fm.setOptions({maxNumFaces:1,refineLandmarks:false,minDetectionConfidence:0.55,minTrackingConfidence:0.5});
+      fm.onResults(r=>{_scanLM=r.multiFaceLandmarks&&r.multiFaceLandmarks[0]||null;});
+      fm.initialize().then(()=>{_scanFM=fm;cb(fm);}).catch(()=>cb(null));
+    }catch(e){cb(null);}
+  };
+  s.onerror=()=>cb(null);
+  document.head.appendChild(s);
+}
+
+// ── Main scan function ──
 function startPSL(){
   document.getElementById('psl-screen').classList.add('open');
   setPill('scan');
   _pslPhase=0;_pslScores=[0,0,0];_pslHold=0;
-  _pslBlinkDetected=false;_pslLandmarks=null;_pslConfirmFrames=0;
+  _scanBlinkDone=false;_scanTurnDone=false;_scanLM=null;
+  _holdCount=0;_prevEAR2=1;_blinkCooldown=0;_motionBuf=0;
+  _prevFrameData=null;
+  if(_scanRafId){cancelAnimationFrame(_scanRafId);_scanRafId=null;}
+  if(_timeoutId){clearTimeout(_timeoutId);_timeoutId=null;}
   resetPSLUI();
-  const instr=document.getElementById('psl-instr');
-  const errEl=document.getElementById('psl-error');
-  if(instr)instr.textContent='INITIALIZING...';
+  pslSetState('camera-loading');
+  pslSetProgress(0);
+  document.getElementById('psl-retry-btn').style.display='none';
 
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
-    if(errEl)errEl.textContent='CAMERA NOT SUPPORTED';
-    setPill('idle');return;
+    pslSetState('error');return;
   }
 
   navigator.mediaDevices.getUserMedia({
-    video:{facingMode:{ideal:'user'},width:{ideal:640},height:{ideal:480}},
-    audio:false
+    video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false
   }).then(stream=>{
-    _pslStream=stream;
+    _pslStream=stream;_scanStream=stream;
     const vid=document.getElementById('psl-vid');
-    vid.srcObject=stream;
-    vid.play().catch(()=>{});
+    vid.srcObject=stream;vid.play().catch(()=>{});
 
-    let attempts=0;
-    const waitReady=setInterval(()=>{
-      attempts++;
-      if(vid.videoWidth>0){
-        clearInterval(waitReady);
-        if(instr)instr.textContent='LOADING FACE SCANNER...';
-        // Try MediaPipe first, fallback to skin detection
-        initFaceMesh(fm=>{
-          startPSLLoop(vid, fm);
+    // Wait for video ready
+    const waitVid=setInterval(()=>{
+      if(vid.readyState>=2&&vid.videoWidth>0){
+        clearInterval(waitVid);
+        loadFaceMesh(fm=>{
+          _scanFM=fm;
+          pslSetState('look-straight');
+          _pslPhase=0;
           updatePSLStep(0);
+          runScanLoop(vid);
+          // 10s timeout per step
+          startStepTimeout();
         });
-      } else if(attempts>50){
-        clearInterval(waitReady);
-        initFaceMesh(fm=>{startPSLLoop(vid,fm);updatePSLStep(0);});
       }
-    },100);
+    },120);
+    // Hard timeout for video load
+    setTimeout(()=>{clearInterval(waitVid);},8000);
   }).catch(err=>{
-    const msg=err&&err.name==='NotAllowedError'
-      ?'CAMERA ACCESS DENIED — allow camera in settings'
-      :'CAMERA NOT AVAILABLE';
-    if(errEl)errEl.textContent=msg;
-    if(instr)instr.textContent='CAMERA ERROR';
+    pslSetState('error');
+    const msg=err&&err.name==='NotAllowedError'?'CAMERA ACCESS DENIED':'CAMERA NOT AVAILABLE';
+    document.getElementById('psl-error').textContent=msg;
     setPill('idle');
   });
 }
 
-function startPSLLoop(vid, faceMesh){
+function retryPSL(){startPSL();}
+
+function startStepTimeout(){
+  if(_timeoutId)clearTimeout(_timeoutId);
+  _timeoutId=setTimeout(()=>{
+    if(_scanState!=='success'){
+      pslSetState('timeout');
+      if(_scanRafId){cancelAnimationFrame(_scanRafId);_scanRafId=null;}
+      stopPSLStream();
+    }
+  },15000);
+}
+
+function stopPSLStream(){
+  if(_scanStream){_scanStream.getTracks().forEach(t=>t.stop());_scanStream=null;}
+  if(_pslStream){_pslStream.getTracks().forEach(t=>t.stop());_pslStream=null;}
+}
+
+function runScanLoop(vid){
   const cv=document.getElementById('pc-center');
-  _pslConfirmFrames=0;_prevFrameData=null;_pslBlinkDetected=false;
-  let _lastFrame=0;
-  let _motionBuffer=0;
-  let _holdFrames=0; // frames with condition met for current step
+  let lastT=0;
 
-  const STEP_NEEDED=20; // frames needed per step (~1.3sec at 15fps)
-  const BLINK_EAR=0.21; // EAR threshold for blink
-  const TURN_THRESH=0.12; // nose offset threshold for turn right
+  async function loop(ts){
+    if(ts-lastT<66){_scanRafId=requestAnimationFrame(loop);return;} // ~15fps
+    lastT=ts;
+    if(!vid.videoWidth){_scanRafId=requestAnimationFrame(loop);return;}
 
-  const instrEl=document.getElementById('psl-instr');
-  const errEl=document.getElementById('psl-error');
-  const barEl=document.getElementById('psl-bar');
-
-  const STEP_INSTRS=['LOOK STRAIGHT AT CAMERA','BLINK YOUR EYES','TURN HEAD TO THE RIGHT',''];
-
-  if(instrEl)instrEl.textContent=STEP_INSTRS[0];
-  if(barEl)barEl.style.width='0%';
-
-  async function drawLoop(ts){
-    if(ts-_lastFrame<66){_pslRafId=requestAnimationFrame(drawLoop);return;}
-    _lastFrame=ts;
-    if(!vid.videoWidth){_pslRafId=requestAnimationFrame(drawLoop);return;}
-
+    // Draw mirrored video to canvas
     const isMob=window.innerWidth<=640;
-    const scale=isMob?0.55:0.8;
-    cv.width=Math.floor(vid.videoWidth*scale);
-    cv.height=Math.floor(vid.videoHeight*scale);
+    cv.width=~~(vid.videoWidth*(isMob?.5:.75));
+    cv.height=~~(vid.videoHeight*(isMob?.5:.75));
     const ctx=cv.getContext('2d');
-    // Mirror horizontally (selfie view)
     ctx.save();ctx.scale(-1,1);ctx.drawImage(vid,-cv.width,0,cv.width,cv.height);ctx.restore();
     const W=cv.width,H=cv.height;
 
-    // Send to MediaPipe if available
-    if(faceMesh&&_pslMPReady){
-      try{await faceMesh.send({image:vid});}catch(e){}
+    // Send to FaceMesh
+    if(_scanFM){
+      try{await _scanFM.send({image:vid});}catch(e){}
     }
 
-    const lm=_pslLandmarks;
-    const faceOk=lm?true:(detectFaceSkin(ctx,W,H)>0.05);
+    // Mirror landmarks for display (video is mirrored)
+    const lm=_scanLM?_scanLM.map(p=>({x:1-p.x,y:p.y,z:p.z||0})):null;
 
-    // Motion check
-    const motionNow=detectMotion(ctx,W,H);
-    if(motionNow)_motionBuffer=Math.min(_motionBuffer+1,6);
-    else _motionBuffer=Math.max(_motionBuffer-0.5,0);
-    const liveOk=faceOk&&_motionBuffer>0;
+    // Fallback face detection
+    const skin=skinRatio(ctx,W,H);
+    const faceOk=lm?true:skin>0.05;
+    const motion=motionCheck(ctx,W,H);
+    if(motion)_motionBuf=Math.min(_motionBuf+1,6);
+    else _motionBuf=Math.max(_motionBuf-.5,0);
+    const live=faceOk&&_motionBuf>0;
 
     // Draw overlay
-    ctx.save();
-    if(lm&&faceMesh){
-      // Mirror landmarks back for display (video is mirrored)
-      const mirroredLm=lm.map(p=>({x:1-p.x,y:p.y,z:p.z}));
-      drawMesh(ctx,mirroredLm,W,H,_pslPhase,faceOk);
-    } else {
-      // Fallback: simple oval
-      const col=liveOk?'rgba(255,45,45,0.7)':'rgba(80,80,80,0.4)';
-      ctx.strokeStyle=col;ctx.lineWidth=1.5;
-      ctx.beginPath();ctx.ellipse(W/2,H*0.44,W*0.23,H*0.32,0,0,Math.PI*2);ctx.stroke();
-      // scan line
-      const sy=H*((Date.now()%1800)/1800*0.7+0.15);
-      const sg=ctx.createLinearGradient(W*0.1,sy,W*0.9,sy);
-      sg.addColorStop(0,'transparent');sg.addColorStop(0.5,liveOk?'rgba(255,45,45,0.5)':'rgba(80,80,80,0.3)');sg.addColorStop(1,'transparent');
-      ctx.strokeStyle=sg;ctx.lineWidth=1.5;
-      ctx.beginPath();ctx.moveTo(W*0.1,sy);ctx.lineTo(W*0.9,sy);ctx.stroke();
-    }
-    ctx.restore();
+    drawFaceOverlay(ctx,lm,W,H,faceOk);
 
-    // Error messages
-    if(errEl){
-      if(!faceOk) errEl.textContent='NO FACE DETECTED — move closer';
-      else if(!liveOk) errEl.textContent='STATIC IMAGE — use real camera';
-      else errEl.textContent='';
-    }
-    if(instrEl) instrEl.style.color=liveOk?'var(--grn)':'var(--wh)';
+    // ── State logic ──
+    if(_scanState==='look-straight'||_scanState==='no-face'){
+      if(!faceOk){
+        pslSetState('no-face');_holdCount=0;
+      } else {
+        pslSetState('look-straight');
+        if(live)_holdCount++;else _holdCount=Math.max(0,_holdCount-1);
+        const prog=Math.min(_holdCount/STEP_FRAMES,1);
+        pslSetProgress(prog*.33);
+        if(_holdCount>=STEP_FRAMES){
+          // Step 1 done — advance to blink
+          advancePSLStep(0);
+          pslSetState('blink');
+          _holdCount=0;_scanBlinkDone=false;_prevEAR2=1;
+          startStepTimeout();
+        }
+      }
 
-    // ── Per-step logic ──
-    let condMet=false;
-
-    if(_pslPhase===0){
-      // Step 0: face aligned — just need face + motion
-      condMet=liveOk;
-
-    } else if(_pslPhase===1){
-      // Step 1: blink detection
-      if(lm&&faceMesh){
-        // Left eye: 33,160,158,133,153,144 / Right eye: 362,385,387,263,373,380
-        const lEye=[lm[33],lm[160],lm[158],lm[133],lm[153],lm[144]];
-        const rEye=[lm[362],lm[385],lm[387],lm[263],lm[373],lm[380]];
-        if(lEye.every(Boolean)&&rEye.every(Boolean)){
-          const ear=(calcEAR(lEye)+calcEAR(rEye))/2;
-          if(_prevEAR>BLINK_EAR&&ear<BLINK_EAR&&_pslBlinkCooldown<=0){
-            _pslBlinkDetected=true;
-            _pslBlinkCooldown=10;
+    } else if(_scanState==='blink'||_scanState==='blink-waiting'){
+      if(!faceOk){document.getElementById('psl-error').textContent='FACE NOT DETECTED';_holdCount=0;}
+      else {
+        // Blink detection via EAR
+        let blinkNow=false;
+        if(lm&&_scanFM){
+          const lEye=[lm[33],lm[160],lm[158],lm[133],lm[153],lm[144]];
+          const rEye=[lm[362],lm[385],lm[387],lm[263],lm[373],lm[380]];
+          if(lEye.every(Boolean)&&rEye.every(Boolean)){
+            const ear=(earCalc(lEye)+earCalc(rEye))/2;
+            if(_prevEAR2>0.22&&ear<0.19&&_blinkCooldown<=0){blinkNow=true;_scanBlinkDone=true;}
+            if(_blinkCooldown>0)_blinkCooldown--;
+            if(blinkNow)_blinkCooldown=12;
+            _prevEAR2=ear;
           }
-          if(_pslBlinkCooldown>0)_pslBlinkCooldown--;
-          _prevEAR=ear;
+        } else {
+          // Fallback: motion spike = blink
+          if(motion&&_motionBuf>3)_scanBlinkDone=true;
         }
-        condMet=_pslBlinkDetected&&liveOk;
-        if(faceOk&&!_pslBlinkDetected&&instrEl){instrEl.textContent='BLINK YOUR EYES';instrEl.style.color='var(--wh)';}
-        if(_pslBlinkDetected&&instrEl){instrEl.textContent='BLINK DETECTED ✓';instrEl.style.color='var(--grn)';}
-      } else {
-        // No MediaPipe — simulate with motion spike
-        const motionHigh=detectMotion(ctx,W,H);
-        if(motionHigh)_pslBlinkDetected=true;
-        condMet=_pslBlinkDetected&&faceOk;
+
+        if(_scanBlinkDone){
+          _holdCount++;
+          pslSetProgress(.33+(_holdCount/STEP_FRAMES)*.33);
+          document.getElementById('psl-instr').textContent='BLINK DETECTED ✓';
+          document.getElementById('psl-instr').style.color='var(--grn)';
+          if(_holdCount>=STEP_FRAMES){
+            advancePSLStep(1);
+            pslSetState('look-right');
+            _holdCount=0;_scanTurnDone=false;
+            startStepTimeout();
+          }
+        } else {
+          pslSetProgress(.33);
+          if(live)pslSetState('blink-waiting');
+        }
       }
 
-    } else if(_pslPhase===2){
-      // Step 2: turn head right
-      if(lm&&faceMesh){
-        const mirLm=lm.map(p=>({x:1-p.x,y:p.y,z:p.z}));
-        const noseTip=mirLm[1];
-        const leftEye=mirLm[33];
-        const rightEye=mirLm[263];
-        if(noseTip&&leftEye&&rightEye){
-          const faceCenter=(leftEye.x+rightEye.x)/2;
-          const yaw=noseTip.x-faceCenter;
-          condMet=yaw>TURN_THRESH&&liveOk;
-          if(faceOk&&!condMet&&instrEl){instrEl.textContent='TURN HEAD RIGHT →';instrEl.style.color='var(--wh)';}
-          if(condMet&&instrEl){instrEl.textContent='TURN DETECTED ✓';instrEl.style.color='var(--grn)';}
+    } else if(_scanState==='look-right'||_scanState==='look-right-waiting'){
+      if(!faceOk){document.getElementById('psl-error').textContent='FACE NOT DETECTED';_holdCount=0;}
+      else {
+        let turnOk=false;
+        if(lm&&_scanFM){
+          const nose=lm[1],lEye=lm[33],rEye=lm[263];
+          if(nose&&lEye&&rEye){
+            const center=(lEye.x+rEye.x)/2;
+            // Mirrored, so turning right on screen = nose.x < center
+            const yaw=center-nose.x;
+            turnOk=yaw>0.10;
+            if(turnOk)_scanTurnDone=true;
+          }
+        } else {
+          if(live)_scanTurnDone=true;
         }
-      } else {
-        // Fallback: any motion = turn accepted
-        condMet=liveOk;
+
+        if(_scanTurnDone){
+          _holdCount++;
+          pslSetProgress(.66+(_holdCount/STEP_FRAMES)*.34);
+          document.getElementById('psl-instr').textContent='TURN DETECTED ✓';
+          document.getElementById('psl-instr').style.color='var(--grn)';
+          if(_holdCount>=STEP_FRAMES){
+            cancelAnimationFrame(_scanRafId);_scanRafId=null;
+            if(_timeoutId)clearTimeout(_timeoutId);
+            advancePSLStep(2);
+            finishPSLScan();
+            return;
+          }
+        } else {
+          pslSetProgress(.66);
+          if(live)pslSetState('look-right-waiting');
+          else pslSetState('look-right');
+        }
       }
     }
 
-    // Count hold frames
-    if(condMet){
-      _holdFrames++;
-    } else {
-      _holdFrames=Math.max(0,_holdFrames-1);
-    }
-
-    // Progress
-    const stepProg=Math.min(_holdFrames/STEP_NEEDED,1);
-    const totalProg=(_pslPhase/PSL_TOTAL_STEPS+stepProg/PSL_TOTAL_STEPS)*100;
-    if(barEl)barEl.style.width=totalProg+'%';
-
-    if(_holdFrames>=STEP_NEEDED){
-      _holdFrames=0;
-      cancelAnimationFrame(_pslRafId);
-      // Snapshot
-      const idx=Math.min(_pslPhase,PSL_CANVASES.length-1);
-      const dst=document.getElementById(PSL_CANVASES[idx]);
-      if(dst){dst.width=cv.width;dst.height=cv.height;dst.getContext('2d').drawImage(cv,0,0);}
-      const sc=parseFloat((7+Math.random()*2.5).toFixed(1));
-      _pslScores[Math.min(_pslPhase,2)]=Math.min(9.8,sc);
-      completePSLStep(sc);
-      return;
-    }
-
-    _pslRafId=requestAnimationFrame(drawLoop);
+    _scanRafId=requestAnimationFrame(loop);
   }
-  _pslRafId=requestAnimationFrame(drawLoop);
+  _scanRafId=requestAnimationFrame(loop);
+}
+
+function advancePSLStep(step){
+  if(PSL_STEPS[step])document.getElementById(PSL_STEPS[step]).className='psl-step ok';
+  const next=PSL_STEPS[step+1];
+  if(next){const el=document.getElementById(next);if(el)el.className='psl-step cur';}
+  const counter=document.getElementById('psl-step-counter');
+  if(counter){
+    const labels=['1 / 3','2 / 3','3 / 3',''];
+    counter.textContent=labels[step+1]||'';
+  }
+  _pslPhase=step+1;
+}
+
+function finishPSLScan(){
+  pslSetState('success');
+  pslSetProgress(1);
+  document.getElementById('psl-bar').style.background='var(--grn)';
+  if(PSL_STEPS[3]){document.getElementById(PSL_STEPS[3]).className='psl-step ok';}
+  const score=parseFloat((7.2+Math.random()*2.4).toFixed(1));
+  _pslScores=[score,score,score];
+  const avg=score;
+  _pslDone=true;
+  // Update 2v2 button
+  const btn2=document.getElementById('btn2-scan');
+  if(btn2)btn2.textContent='START 2V2';
+  setTimeout(()=>{
+    document.getElementById('psl-screen').classList.remove('open');
+    const arenaVid=document.getElementById('vid-you');
+    if(_pslStream){arenaVid.srcObject=_pslStream;_scanStream=null;arenaVid.play().catch(()=>{});}
+    arenaVid.style.display='block';
+    document.getElementById('ce-you').style.opacity='0';
+    document.getElementById('cb-you').classList.add('hot');
+    startArenaMesh(arenaVid);
+    setPill('ready');setBtn('ready');
+    const fs=document.getElementById('psl-fscore');
+    if(fs)fs.textContent=avg.toFixed(1);
+    document.getElementById('psl-final').classList.add('show');
+    document.getElementById('psl-bar').style.background='var(--red)';
+  },1800);
 }
 
 // Legacy stubs
 function runPSLStepTimer(){}
+function startCanvasPSL(vid){runScanLoop(vid);}
+function completePSLStep(){}
+
 function startCanvasPSL(vid){ startPSLLoop(vid, null); }
 
 function completePSLStep(score){
