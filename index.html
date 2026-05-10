@@ -1510,24 +1510,37 @@ function startPSL(){
   }
 
   navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:480},height:{ideal:640}},audio:false})
-    .then(async stream=>{
+    .then(stream=>{
       _pslStream=stream;
       const vid=document.getElementById('psl-vid');
       vid.srcObject=stream;
-      await vid.play().catch(()=>{});
-      startCanvasPSL(vid);
-      updatePSLStep(0);
+      // Don't await play — just fire and forget, works on iOS too
+      vid.play().catch(()=>{});
+      // Wait for video to have dimensions before scanning
+      let attempts=0;
+      const waitReady=setInterval(()=>{
+        attempts++;
+        if(vid.videoWidth>0){
+          clearInterval(waitReady);
+          startCanvasPSL(vid);
+          updatePSLStep(0);
+        } else if(attempts>40){
+          clearInterval(waitReady);
+          // Video stream exists but no dimensions — still try
+          startCanvasPSL(vid);
+          updatePSLStep(0);
+        }
+      },100);
     })
     .catch(err=>{
+      // Only show error if camera was actually denied
       const errEl=document.getElementById('psl-error');
-      if(errEl)errEl.textContent='CAMERA ACCESS DENIED — allow camera to play';
       const instr=document.getElementById('psl-instr');
+      const msg=err&&err.name==='NotAllowedError'?'CAMERA ACCESS DENIED — allow camera in browser settings':'CAMERA NOT AVAILABLE';
+      if(errEl)errEl.textContent=msg;
       if(instr)instr.textContent='CAMERA ERROR';
-      setTimeout(()=>{
-        document.getElementById('psl-screen').classList.remove('open');
-        setPill('idle');
-        if(errEl)errEl.textContent='';
-      },2500);
+      // Don't auto-close — let user read and close manually
+      setPill('idle');
     });
 }
 
