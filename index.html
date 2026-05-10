@@ -1572,15 +1572,28 @@ function detectMotion(ctx, W, H){
   }catch(e){return true;}
 }
 
+// PSL scan state
+let _pslConfirmFrames=0; // consecutive frames with live face
+const PSL_NEEDED_FRAMES=30; // ~2 sec at 15fps per step
+const PSL_STEP_LABELS=['ALIGN FACE','LOOK FORWARD','TURN YOUR HEAD','HOLD STILL'];
+
 function startCanvasPSL(vid){
   const cv=document.getElementById('pc-center');
-  _pslFaceTime=0;_pslNoFaceStreak=0;
+  _pslFaceTime=0;_pslConfirmFrames=0;_prevFrameData=null;
   let _lastFrame=0;
 
+  // Set first instruction
+  const instr=document.getElementById('psl-instr');
+  const errEl=document.getElementById('psl-error');
+  if(instr)instr.textContent=PSL_STEP_LABELS[0];
+  if(errEl)errEl.textContent='';
+  document.getElementById('psl-bar').style.width='0%';
+
   function drawLoop(ts){
-    if(ts-_lastFrame<66){_pslRafId=requestAnimationFrame(drawLoop);return;} // ~15fps
+    if(ts-_lastFrame<66){_pslRafId=requestAnimationFrame(drawLoop);return;}
     _lastFrame=ts;
     if(!vid.videoWidth){_pslRafId=requestAnimationFrame(drawLoop);return;}
+
     const isMob=window.innerWidth<=640;
     const scale=isMob?0.5:0.75;
     cv.width=Math.floor(vid.videoWidth*scale);
@@ -1589,83 +1602,70 @@ function startCanvasPSL(vid){
     ctx.save();ctx.scale(-1,1);ctx.drawImage(vid,-cv.width,0,cv.width,cv.height);ctx.restore();
     const W=cv.width,H=cv.height;
 
-    // Detect face
+    // Detect face + motion
     const skinRatio=detectFace(ctx,W,H);
-    const faceOk=skinRatio>0.08;
+    const faceOk=skinRatio>0.06;
+    const motionOk=detectMotion(ctx,W,H);
+    const liveOk=faceOk&&motionOk;
 
-    // Draw oval — green if face detected, red if not
-    ctx.strokeStyle=faceOk?'rgba(74,222,128,0.7)':'rgba(255,45,45,0.4)';
-    ctx.lineWidth=2;
+    // Draw oval
+    ctx.strokeStyle=liveOk?'rgba(74,222,128,0.8)':'rgba(255,45,45,0.5)';
+    ctx.lineWidth=2.5;
     ctx.beginPath();ctx.ellipse(W/2,H*0.44,W*0.22,H*0.3,0,0,Math.PI*2);ctx.stroke();
 
-    // Face indicator dots
-    if(faceOk){
-      ctx.fillStyle='rgba(74,222,128,0.6)';
+    // Animated dots when live
+    if(liveOk){
+      ctx.fillStyle='rgba(74,222,128,0.7)';
       for(let i=0;i<8;i++){
         const a=i/8*Math.PI*2+Date.now()*0.002;
         ctx.beginPath();ctx.arc(W/2+Math.cos(a)*W*0.2,H*0.44+Math.sin(a)*H*0.27,2.5,0,Math.PI*2);ctx.fill();
       }
     }
 
-    // Update instruction color
-    const instr=document.getElementById('psl-instr');
-    if(instr)instr.style.color=faceOk?'var(--grn)':'var(--wh)';
+    // Show errors only when actually wrong
+    if(errEl){
+      if(!faceOk) errEl.textContent='NO FACE DETECTED — move closer';
+      else if(!motionOk) errEl.textContent='STATIC IMAGE DETECTED — use real camera';
+      else errEl.textContent='';
+    }
+    if(instr){
+      instr.style.color=liveOk?'var(--grn)':'var(--wh)';
+    }
+
+    // Count consecutive live frames
+    if(liveOk){
+      _pslConfirmFrames++;
+    } else {
+      _pslConfirmFrames=Math.max(0,_pslConfirmFrames-2); // decay faster
+    }
+
+    // Progress bar for current step
+    const stepProgress=Math.min(_pslConfirmFrames/PSL_NEEDED_FRAMES,1);
+    const totalProg=(_pslPhase/PSL_TOTAL_STEPS+stepProgress/PSL_TOTAL_STEPS)*100;
+    document.getElementById('psl-bar').style.width=totalProg+'%';
+
+    // Step complete when enough consecutive live frames
+    if(_pslConfirmFrames>=PSL_NEEDED_FRAMES){
+      _pslConfirmFrames=0;
+      cancelAnimationFrame(_pslRafId);
+      // Snapshot
+      const idx=Math.min(_pslPhase,PSL_CANVASES.length-1);
+      const dst=document.getElementById(PSL_CANVASES[idx]);
+      if(dst){dst.width=cv.width;dst.height=cv.height;dst.getContext('2d').drawImage(cv,0,0);}
+      const sc=parseFloat((6+skinRatio*20+Math.random()*1.5).toFixed(1));
+      _pslScores[Math.min(_pslPhase,2)]=Math.min(9.8,sc);
+      completePSLStep(sc);
+      return;
+    }
 
     _pslRafId=requestAnimationFrame(drawLoop);
   }
   _pslRafId=requestAnimationFrame(drawLoop);
-
-  // Timer that only counts when face is detected
-  runPSLStepTimer(vid, cv);
 }
 
-function runPSLStepTimer(vid, cv){
-  if(_pslTimerInterval)clearInterval(_pslTimerInterval);
-  _pslFaceTime=0;
-  _prevFrameData=null;
-  document.getElementById('psl-bar').style.width=(_pslPhase/PSL_TOTAL_STEPS*100)+'%';
-  const instrs=['ALIGN FACE','LOOK FORWARD','TURN YOUR HEAD','HOLD STILL'];
-  const instr=document.getElementById('psl-instr');
-  if(instr)instr.textContent=instrs[_pslPhase]||'SCANNING...';
+// Legacy stub — not used anymore
+function runPSLStepTimer(){}
 
-  _pslTimerInterval=setInterval(()=>{
-    const cv2=document.getElementById('pc-center');
-    const errEl=document.getElementById('psl-error');
-    let faceOk=false, motionOk=false;
-    if(cv2&&cv2.width>0){
-      const ctx2=cv2.getContext('2d');
-      const skinRatio=detectFace(ctx2,cv2.width,cv2.height);
-      faceOk=skinRatio>0.06;
-      motionOk=detectMotion(ctx2,cv2.width,cv2.height);
-    }
-    const liveOk=faceOk&&motionOk;
-
-    if(liveOk){
-      _pslFaceTime++;
-      if(errEl)errEl.textContent='';
-      if(instr)instr.style.color='var(--grn)';
-    } else {
-      if(instr)instr.style.color='var(--wh)';
-      if(!faceOk&&errEl)errEl.textContent='NO FACE DETECTED — move closer';
-      else if(!motionOk&&errEl)errEl.textContent='STATIC IMAGE DETECTED — use real camera';
-    }
-
-    const prog=(_pslPhase/PSL_TOTAL_STEPS+Math.min(_pslFaceTime,PSL_STEP_SECS)/(PSL_STEP_SECS*PSL_TOTAL_STEPS))*100;
-    document.getElementById('psl-bar').style.width=Math.min(prog,100)+'%';
-
-    if(_pslFaceTime>=PSL_STEP_SECS){
-      clearInterval(_pslTimerInterval);
-      const sc=parseFloat((6+Math.random()*3.2).toFixed(1));
-      _pslScores[Math.min(_pslPhase,2)]=sc;
-      if(cv2){
-        const idx=Math.min(_pslPhase,PSL_CANVASES.length-1);
-        const dst=document.getElementById(PSL_CANVASES[idx]);
-        if(dst){dst.width=cv2.width;dst.height=cv2.height;dst.getContext('2d').drawImage(cv2,0,0);}
-      }
-      completePSLStep(sc);
-    }
-  },1000);
-}
 function completePSLStep(score){
   _pslHold=0;
   if(PSL_STEPS[_pslPhase])document.getElementById(PSL_STEPS[_pslPhase]).className='psl-step ok';
