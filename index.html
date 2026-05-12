@@ -160,7 +160,7 @@ nav{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-
 .hcta p{font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g3);margin-bottom:2rem;position:relative;z-index:1}
 
 /* ══ PSL SCAN ══ */
-.psl-screen{display:none;position:fixed;inset:0;background:#0a0a0f;z-index:200;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto}
+.psl-screen{display:none;position:fixed;inset:0;background:#0a0a0f;z-index:200;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto;position:fixed}
 .psl-screen.open{display:flex}
 .psl-logo{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.15em;color:var(--g3);margin-bottom:.25rem;text-align:center}
 .psl-logo span{color:var(--red)}
@@ -707,6 +707,9 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 
 <!-- ══ PSL SCAN SCREEN ══ -->
 <div class="psl-screen" id="psl-screen">
+  <!-- Cancel button — fixed so always visible -->
+  <button onclick="cancelPSL()" id="psl-cancel-btn" style="position:fixed;top:1.2rem;left:1.2rem;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.1em;background:rgba(0,0,0,.6);color:rgba(255,255,255,.7);border:.5px solid rgba(255,255,255,.25);padding:.4rem .9rem;cursor:pointer;z-index:9999;text-transform:uppercase;border-radius:3px;backdrop-filter:blur(8px);display:none">← CANCEL</button>
+
   <div class="psl-logo">FACE<span>CLASH</span></div>
   <div class="psl-title">BIOMETRIC SCAN</div>
   <div class="psl-sub">Liveness check · Cannot be faked with OBS or photo</div>
@@ -1331,6 +1334,8 @@ function go(id){
   window.scrollTo(0,0);
   if(id==='leaderboard')buildLB('all');
   if(id==='profile'){buildChart();buildHistory();}
+  // Save current screen
+  try{sessionStorage.setItem('fc_screen',id);}catch(e){}
 }
 function copyMsg(id){
   const el=document.getElementById(id);
@@ -1801,6 +1806,7 @@ function startPSL(){
     return;
   }
   document.getElementById('psl-screen').classList.add('open');
+  const _cb=document.getElementById('psl-cancel-btn');if(_cb)_cb.style.display='block';
   setPill('scan');
   _pslPhase=0;_pslScores=[0,0,0];_pslHold=0;
   _scanBlinkDone=false;_scanTurnDone=false;_scanLM=null;
@@ -1850,6 +1856,26 @@ function startPSL(){
 }
 
 function retryPSL(){startPSL();}
+
+function cancelPSL(){
+  // Stop scan loop
+  if(_scanRafId){cancelAnimationFrame(_scanRafId);_scanRafId=null;}
+  if(_timeoutId){clearTimeout(_timeoutId);_timeoutId=null;}
+  // Stop camera
+  stopPSLStream();
+  // Clear canvas
+  const cv=document.getElementById('pc-center');
+  if(cv){const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);cv.style.display='none';}
+  // Reset state
+  _scanState='idle';_pslPhase=0;_pslDone=false;
+  _scanBlinkDone=false;_scanTurnDone=false;_holdCount=0;
+  // Close screen
+  document.getElementById('psl-screen').classList.remove('open');
+  const _cb2=document.getElementById('psl-cancel-btn');if(_cb2)_cb2.style.display='none';
+  setPill('idle');setBtn('idle');
+  // Return to arena
+  go('arena');
+}
 
 function startStepTimeout(){
   if(_timeoutId)clearTimeout(_timeoutId);
@@ -2036,6 +2062,7 @@ function finishPSLScan(){
   if(btn2)btn2.textContent='START 2V2';
   setTimeout(()=>{
     document.getElementById('psl-screen').classList.remove('open');
+  const _cb2=document.getElementById('psl-cancel-btn');if(_cb2)_cb2.style.display='none';
     // Make sure canvas stays hidden in arena
     if(pslCv){pslCv.style.display='none';}
     const arenaVid=document.getElementById('vid-you');
@@ -2104,6 +2131,7 @@ function finishPSL(){
   setTimeout(()=>{
     _pslDone=true;
     document.getElementById('psl-screen').classList.remove('open');
+  const _cb2=document.getElementById('psl-cancel-btn');if(_cb2)_cb2.style.display='none';
     // Update 2v2 button to show it's ready
     const btn2=document.getElementById('btn2-scan');
     if(btn2)btn2.textContent='START 2v2';
@@ -2720,6 +2748,15 @@ function lsLoad(){
     if(h)_eloHistory=JSON.parse(h);
     const m=localStorage.getItem('fc_matches');
     if(m)_localMatches=JSON.parse(m);
+  }catch(e){}
+
+  // Restore last screen (skip matchmaking/lobby states — can't restore live sessions)
+  try{
+    const lastScreen=sessionStorage.getItem('fc_screen');
+    const safeScreens=['home','arena','leaderboard','pricing','profile','streamers'];
+    if(lastScreen&&safeScreens.includes(lastScreen)){
+      setTimeout(()=>go(lastScreen),100);
+    }
   }catch(e){}
 }
 
