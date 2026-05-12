@@ -1978,11 +1978,17 @@ function finishPSLScan(){
   _pslScores=[score,score,score];
   const avg=score;
   _pslDone=true;
+  // Stop scan loop and clear overlay immediately
+  if(_scanRafId){cancelAnimationFrame(_scanRafId);_scanRafId=null;}
+  const pslCv=document.getElementById('pc-center');
+  if(pslCv){const ctx=pslCv.getContext('2d');ctx.clearRect(0,0,pslCv.width,pslCv.height);pslCv.style.display='none';}
   // Update 2v2 button
   const btn2=document.getElementById('btn2-scan');
   if(btn2)btn2.textContent='START 2V2';
   setTimeout(()=>{
     document.getElementById('psl-screen').classList.remove('open');
+    // Make sure canvas stays hidden in arena
+    if(pslCv){pslCv.style.display='none';}
     const arenaVid=document.getElementById('vid-you');
     if(_pslStream){arenaVid.srcObject=_pslStream;_scanStream=null;arenaVid.play().catch(()=>{});}
     arenaVid.style.display='block';
@@ -2117,7 +2123,7 @@ function startArenaMesh(vid){
     cv.width=vid.videoWidth;cv.height=vid.videoHeight;
     const ctx=cv.getContext('2d');
     ctx.clearRect(0,0,cv.width,cv.height);
-    // Draw face detection overlay using skin detection
+    // Clean camera — no overlay during matchmaking
     const W=cv.width,H=cv.height;
     try{
       const img=ctx.getImageData(Math.floor(W*.2),Math.floor(H*.1),Math.floor(W*.6),Math.floor(H*.8));
@@ -2127,23 +2133,8 @@ function startArenaMesh(vid){
         const r=d[i],g=d[i+1],b=d[i+2];
         if(r>60&&g>30&&b>15&&r>g&&r>b&&(r-b)>10)skinCount++;
       }
-      const total=d.length/16;
-      const skinRatio=skinCount/total;
-      // Draw scanning overlay
-      const cx=W/2,cy=H*.45;
-      const rx=W*.22,ry=H*.3;
-      ctx.strokeStyle='rgba(255,45,45,'+(0.3+skinRatio*0.5)+')';
-      ctx.lineWidth=2;
-      ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);ctx.stroke();
-      // Scan dots
-      ctx.fillStyle='rgba(255,45,45,0.6)';
-      for(let i=0;i<12;i++){
-        const a=i/12*Math.PI*2+Date.now()*.001;
-        const x=cx+Math.cos(a)*rx*.85;
-        const y=cy+Math.sin(a)*ry*.85;
-        ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();
-      }
-      // Live score from skin ratio
+      const skinRatio=skinCount/(d.length/16);
+      // Only update live score — no visual circle
       if(skinRatio>.05&&_phase==='counting'){
         _liveScore=parseFloat((4+skinRatio*30).toFixed(1));
         _liveScore=Math.min(9.8,Math.max(3.5,_liveScore));
