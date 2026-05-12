@@ -1920,11 +1920,16 @@ function runScanLoop(vid){
       else {
         let turnOk=false;
         if(lm&&_scanFM){
-          const nose=lm[1],lEye=lm[33],rEye=lm[263];
+          // lm is already mirrored (x = 1-original.x)
+          // Raw (unmirrored) landmarks from FaceMesh:
+          //   user turns RIGHT → nose.x moves toward 1.0 (raw) → after mirror: toward 0.0
+          // So in mirrored coords: user's real right = nose.x < eyeCenter.x
+          const nose=_scanLM[1],lEye=_scanLM[33],rEye=_scanLM[263];
           if(nose&&lEye&&rEye){
             const center=(lEye.x+rEye.x)/2;
-            // Mirrored, so turning right on screen = nose.x < center
-            const yaw=center-nose.x;
+            // Use RAW (unmirrored) landmarks for direction detection
+            // user turns right → nose.x increases relative to center in raw coords
+            const yaw=nose.x-center; // positive = user turned right (raw coords)
             turnOk=yaw>0.10;
             if(turnOk)_scanTurnDone=true;
           }
