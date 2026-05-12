@@ -1756,7 +1756,50 @@ function loadFaceMesh(cb){
 }
 
 // ── Main scan function ──
+// ── PSL scan cache (6h or 10 matches) ──
+function pslCacheValid(){
+  try{
+    const v=localStorage.getItem('faceScanVerified');
+    const ts=parseInt(localStorage.getItem('faceScanTimestamp')||'0');
+    const mc=parseInt(localStorage.getItem('faceScanMatchCount')||'0');
+    if(v!=='1')return false;
+    const age=Date.now()-ts;
+    if(age>6*60*60*1000)return false; // 6 hours
+    if(mc>=10)return false; // 10 matches
+    return true;
+  }catch(e){return false;}
+}
+function pslCacheSave(){
+  try{
+    localStorage.setItem('faceScanVerified','1');
+    localStorage.setItem('faceScanTimestamp',Date.now().toString());
+    localStorage.setItem('faceScanMatchCount','0');
+  }catch(e){}
+}
+function pslCacheAddMatch(){
+  try{
+    const mc=parseInt(localStorage.getItem('faceScanMatchCount')||'0');
+    localStorage.setItem('faceScanMatchCount',(mc+1).toString());
+  }catch(e){}
+}
+function pslCacheInvalidate(){
+  try{
+    localStorage.removeItem('faceScanVerified');
+    localStorage.removeItem('faceScanTimestamp');
+    localStorage.removeItem('faceScanMatchCount');
+  }catch(e){}
+}
+
 function startPSL(){
+  // Check if scan still valid
+  if(pslCacheValid()){
+    _pslDone=true;
+    const btn2=document.getElementById('btn2-scan');
+    if(btn2)btn2.textContent='START 2V2';
+    setPill('ready');setBtn('ready');
+    showToast('✓ Verified — scan still valid');
+    return;
+  }
   document.getElementById('psl-screen').classList.add('open');
   setPill('scan');
   _pslPhase=0;_pslScores=[0,0,0];_pslHold=0;
@@ -1983,6 +2026,7 @@ function finishPSLScan(){
   _pslScores=[score,score,score];
   const avg=score;
   _pslDone=true;
+  pslCacheSave(); // save verification to localStorage
   // Stop scan loop and clear overlay immediately
   if(_scanRafId){cancelAnimationFrame(_scanRafId);_scanRafId=null;}
   const pslCv=document.getElementById('pc-center');
@@ -2165,7 +2209,17 @@ function setBtn(s){
 }
 
 function findMatch(){
-  if(!_pslDone){showToast('Complete PSL scan first! 📷');startPSL();return;}
+  if(!_pslDone){
+    // Re-check cache (may have been set in another tab/session)
+    if(pslCacheValid()){
+      _pslDone=true;
+      const btn2=document.getElementById('btn2-scan');
+      if(btn2)btn2.textContent='START 2V2';
+      setPill('ready');setBtn('ready');
+    } else {
+      showToast('Complete PSL scan first! 📷');startPSL();return;
+    }
+  }
   if(_phase==='searching'||_phase==='counting'||_phase==='live')return;
   resetArena();_phase='searching';setPill('live');
   document.getElementById('btn-match').style.display='none';
@@ -2628,6 +2682,15 @@ function lsSave(){
 }
 
 function lsLoad(){
+  // Restore scan verification from cache
+  if(pslCacheValid()){
+    _pslDone=true;
+    setTimeout(()=>{
+      setPill('ready');setBtn('ready');
+      const btn2=document.getElementById('btn2-scan');
+      if(btn2)btn2.textContent='START 2V2';
+    },300);
+  }
   try{
     const u=localStorage.getItem('fc_user');
     if(u){
