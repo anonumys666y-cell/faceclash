@@ -707,12 +707,14 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 
 <!-- ══ PSL SCAN SCREEN ══ -->
 <div class="psl-screen" id="psl-screen">
-  <!-- Cancel button — fixed so always visible -->
-  <button onclick="cancelPSL()" id="psl-cancel-btn" style="position:fixed;top:1.2rem;left:1.2rem;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.1em;background:rgba(0,0,0,.6);color:rgba(255,255,255,.7);border:.5px solid rgba(255,255,255,.25);padding:.4rem .9rem;cursor:pointer;z-index:9999;text-transform:uppercase;border-radius:3px;backdrop-filter:blur(8px);display:none">← CANCEL</button>
-
   <div class="psl-logo">FACE<span>CLASH</span></div>
   <div class="psl-title">BIOMETRIC SCAN</div>
   <div class="psl-sub">Liveness check · Cannot be faked with OBS or photo</div>
+
+  <!-- Cancel row — always visible, no JS conditions -->
+  <div style="width:min(360px,88vw);display:flex;justify-content:flex-start;margin-bottom:6px">
+    <button id="psl-cancel-btn" onclick="cancelPSL()" style="font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;color:rgba(255,255,255,.75);background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.25);padding:.35rem .85rem;cursor:pointer;border-radius:2px;text-transform:uppercase">← CANCEL</button>
+  </div>
 
   <!-- Camera wrap -->
   <div class="psl-cam-wrap" id="psl-cam-wrap">
@@ -1806,7 +1808,6 @@ function startPSL(){
     return;
   }
   document.getElementById('psl-screen').classList.add('open');
-  const _cb=document.getElementById('psl-cancel-btn');if(_cb)_cb.style.display='block';
   setPill('scan');
   _pslPhase=0;_pslScores=[0,0,0];_pslHold=0;
   _scanBlinkDone=false;_scanTurnDone=false;_scanLM=null;
@@ -1871,7 +1872,6 @@ function cancelPSL(){
   _scanBlinkDone=false;_scanTurnDone=false;_holdCount=0;
   // Close screen
   document.getElementById('psl-screen').classList.remove('open');
-  const _cb2=document.getElementById('psl-cancel-btn');if(_cb2)_cb2.style.display='none';
   setPill('idle');setBtn('idle');
   // Return to arena
   go('arena');
@@ -2062,7 +2062,6 @@ function finishPSLScan(){
   if(btn2)btn2.textContent='START 2V2';
   setTimeout(()=>{
     document.getElementById('psl-screen').classList.remove('open');
-  const _cb2=document.getElementById('psl-cancel-btn');if(_cb2)_cb2.style.display='none';
     // Make sure canvas stays hidden in arena
     if(pslCv){pslCv.style.display='none';}
     const arenaVid=document.getElementById('vid-you');
@@ -2131,7 +2130,6 @@ function finishPSL(){
   setTimeout(()=>{
     _pslDone=true;
     document.getElementById('psl-screen').classList.remove('open');
-  const _cb2=document.getElementById('psl-cancel-btn');if(_cb2)_cb2.style.display='none';
     // Update 2v2 button to show it's ready
     const btn2=document.getElementById('btn2-scan');
     if(btn2)btn2.textContent='START 2v2';
