@@ -602,6 +602,72 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 
 /* ══ END PREMIUM v3 ══ */
 
+/* ══ FC PROFILE REDESIGN ══ */
+.fc-profile-page{min-height:100vh;background:radial-gradient(circle at 50% 20%,rgba(255,35,35,.14),transparent 34%),linear-gradient(180deg,#08080c 0%,#030305 100%);color:#fff;padding:40px 24px;font-family:inherit}
+.fc-profile-grid{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1.7fr .9fr;gap:22px}
+.fc-profile-card{position:relative;background:linear-gradient(145deg,rgba(18,18,26,.96),rgba(4,4,7,.98));border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:32px;overflow:hidden;box-shadow:0 35px 100px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.08)}
+.fc-profile-card.premium-frame::before{content:"";position:absolute;inset:0;padding:2px;border-radius:22px;background:linear-gradient(120deg,#ff2b2b,#5c0b12,#ff5a5a,#151515,#ff2b2b);background-size:300% 300%;animation:fcFrameFlow 5s linear infinite;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.fc-profile-card.elite-frame::before{background:linear-gradient(120deg,#ff2b2b,#b8860b,#4b0008,#ff7043,#ff2b2b);background-size:350% 350%}
+@keyframes fcFrameFlow{0%{background-position:0% 50%}100%{background-position:300% 50%}}
+.fc-profile-header{display:flex;gap:28px;align-items:center}
+.fc-avatar-wrap{position:relative;width:120px;height:120px;flex-shrink:0;border-radius:50%;padding:3px;background:linear-gradient(145deg,#2b2b35,#050507);box-shadow:0 0 45px rgba(255,43,43,.15),inset 0 1px 0 rgba(255,255,255,.12);cursor:pointer;transition:transform .2s}
+.fc-avatar-wrap:hover{transform:scale(1.04)}
+.fc-avatar-wrap.clash{background:linear-gradient(120deg,#ff2b2b,#35060a,#ff5a5a);background-size:250% 250%;animation:fcFrameFlow 5s linear infinite}
+.fc-avatar-wrap.elite{background:linear-gradient(120deg,#ff2b2b,#b8860b,#250004,#ff7043);background-size:300% 300%;animation:fcFrameFlow 4s linear infinite}
+.fc-avatar-inner{width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 55% 35%,rgba(255,255,255,.08),transparent 18%),radial-gradient(circle at 50% 58%,rgba(255,43,43,.18),transparent 38%),linear-gradient(145deg,#101017,#020204);display:grid;place-items:center;overflow:hidden;font-size:2.8rem}
+.fc-name-wrap{flex:1}
+.fc-badge-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.fc-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:7px;background:rgba(255,43,43,.16);border:1px solid rgba(255,43,43,.35);color:#ff4b4b;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;font-weight:800}
+.fc-badge.elite-badge{background:rgba(184,134,11,.14);border-color:rgba(184,134,11,.4);color:#d4a520}
+.fc-badge.free-badge{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.25);color:#4ade80}
+.fc-name{margin:0 0 4px;font-size:clamp(32px,4vw,52px);line-height:.95;letter-spacing:2px;text-transform:uppercase;font-weight:900;color:#fff;text-shadow:0 0 25px rgba(255,43,43,.28)}
+.fc-name.animated{background:linear-gradient(90deg,#fff,#ff2b2b,#ff9a9a,#fff);background-size:250% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:fcNickFlow 4s linear infinite}
+@keyframes fcNickFlow{from{background-position:0% 50%}to{background-position:250% 50%}}
+.fc-meta{color:#8b8fa3;letter-spacing:2px;font-family:'DM Mono',monospace;font-size:.6rem;margin-bottom:8px}
+.fc-elo-big{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--red);letter-spacing:.04em;line-height:1}
+.fc-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08)}
+.fc-stat-box{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 10px;text-align:center}
+.fc-stat-val{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#fff;line-height:1}
+.fc-stat-val.red{color:var(--red)}
+.fc-stat-lbl{font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.1em;color:#7d8194;text-transform:uppercase;margin-top:3px}
+/* Side panel */
+.fc-side{display:flex;flex-direction:column;gap:16px}
+.fc-side-card{background:linear-gradient(145deg,rgba(15,15,22,.96),rgba(4,4,7,.98));border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.fc-plan-card{border-color:rgba(255,43,43,.3);background:radial-gradient(circle at 80% 10%,rgba(255,43,43,.12),transparent 40%),rgba(255,255,255,.03)}
+.fc-plan-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.06em;margin:0 0 2px}
+.fc-plan-active{color:#25ff7a;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.12em;font-weight:800}
+.fc-edit-section{display:grid;gap:10px;margin-top:14px}
+.fc-input-lbl{font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:#6b6f82;margin-bottom:3px}
+.fc-inp{width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-family:'DM Mono',monospace;font-size:.7rem;padding:.55rem .75rem;outline:none;box-sizing:border-box}
+.fc-inp:focus{border-color:rgba(255,43,43,.6);box-shadow:0 0 16px rgba(255,43,43,.12)}
+.fc-save-btn{width:100%;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.1em;background:linear-gradient(135deg,#e01818,#ff3535);color:#fff;border:none;border-radius:8px;padding:.65rem;cursor:pointer;transition:all .25s;box-shadow:0 0 20px rgba(255,43,43,.25)}
+.fc-save-btn:hover{transform:translateY(-2px);box-shadow:0 0 35px rgba(255,43,43,.5)}
+/* Avatar picker in redesign */
+.fc-av-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:6px}
+.fc-av-btn{aspect-ratio:1;font-size:1.4rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;cursor:pointer;transition:all .2s;display:grid;place-items:center}
+.fc-av-btn:hover,.fc-av-btn.sel{border-color:rgba(255,43,43,.6);background:rgba(255,43,43,.1)}
+/* Frame picker redesign */
+.fc-frame-row{display:flex;gap:8px;margin-top:6px}
+.fc-frame-opt{width:34px;height:34px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .2s,border-color .2s;flex-shrink:0}
+.fc-frame-opt:hover{transform:scale(1.2)}
+.fc-frame-opt.active{border-color:#fff}
+/* Chart & history in redesign */
+.fc-chart-section,.fc-history-section{margin-top:14px}
+.fc-section-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.1em;color:var(--red);margin-bottom:10px}
+/* Trophy wall redesign */
+.fc-trophies-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:10px}
+.fc-trophy-card{border-radius:12px;background:radial-gradient(circle at 50% 0%,rgba(255,43,43,.1),transparent 50%),rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:14px;text-align:center;transition:.2s}
+.fc-trophy-card:hover{transform:translateY(-3px);border-color:rgba(255,43,43,.4)}
+/* Mobile */
+@media(max-width:900px){
+  .fc-profile-grid{grid-template-columns:1fr}
+  .fc-profile-header{flex-direction:column;text-align:center}
+  .fc-stats-row{grid-template-columns:repeat(2,1fr)}
+  .fc-name{font-size:clamp(26px,7vw,42px)}
+}
+/* ══ END PROFILE REDESIGN ══ */
+
+
 /* ══ DEV PANEL ══ */
 #dev-panel{display:none;position:fixed;bottom:1rem;right:1rem;width:260px;background:rgba(5,5,8,.97);border:1px solid rgba(255,45,45,.4);border-radius:4px;z-index:99999;font-family:'DM Mono',monospace;box-shadow:0 0 40px rgba(255,45,45,.15)}
 #dev-panel.open{display:block}
@@ -1277,86 +1343,132 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
   </div>
 
 <!-- ══════════ PROFILE ══════════ -->
-<div id="p-profile" class="page">
-  <div class="pw">
-    <div class="sl">// Your Profile</div>
-    <div class="prof-head">
-      <div class="av" id="prof-av" onclick="openAvatarPicker()" style="cursor:crosshair;transition:box-shadow .2s" title="Click to change avatar">😤</div>
-      <div>
-        <div class="pn" id="prof-nm">—</div>
-        <div class="pm" id="prof-meta">Sign in to see your profile</div>
-        <div id="active-frame-badge" style="display:none;font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.08em;color:var(--g3);margin-top:.25rem"></div>
-        <div style="margin-top:.5rem;display:flex;gap:.4rem;flex-wrap:wrap">
-          <span class="tpill tp-ot" id="prof-rank">—</span>
+<div id="p-profile" class="page fc-profile-page">
+  <div class="fc-profile-grid">
+
+    <!-- LEFT COLUMN -->
+    <div>
+      <!-- Main card -->
+      <div class="fc-profile-card" id="fc-main-card">
+        <div class="fc-profile-header">
+          <!-- Avatar -->
+          <div class="fc-avatar-wrap" id="fc-avatar-wrap" onclick="openAvatarPicker()" title="Change avatar">
+            <div class="fc-avatar-inner" id="prof-av">
+              <svg viewBox="0 0 80 80" width="70" height="70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="40" cy="28" r="16" fill="rgba(255,43,43,.22)" stroke="rgba(255,43,43,.4)" stroke-width="1.5"/>
+                <path d="M12 70c0-15.464 12.536-28 28-28s28 12.536 28 28" stroke="rgba(255,43,43,.4)" stroke-width="1.5" fill="rgba(255,43,43,.08)"/>
+              </svg>
+            </div>
+          </div>
+          <!-- Name & meta -->
+          <div class="fc-name-wrap">
+            <div class="fc-badge-row">
+              <span class="fc-badge free-badge" id="fc-plan-badge">FREE</span>
+              <span class="tpill tp-ot" id="prof-rank" style="font-size:.55rem">—</span>
+            </div>
+            <h1 class="fc-name" id="prof-nm">—</h1>
+            <div class="fc-meta" id="prof-meta">Sign in to see your profile</div>
+          </div>
+          <!-- ELO -->
+          <div style="text-align:right;flex-shrink:0">
+            <div class="fc-elo-big" id="prof-elo">—</div>
+            <div style="font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.1em;color:#6b6f82;text-transform:uppercase;margin-top:2px">Current ELO</div>
+          </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="fc-stats-row">
+          <div class="fc-stat-box"><div class="fc-stat-val" id="ss-m">0</div><div class="fc-stat-lbl">Matches</div></div>
+          <div class="fc-stat-box"><div class="fc-stat-val red" id="ss-w">0</div><div class="fc-stat-lbl">Wins</div></div>
+          <div class="fc-stat-box"><div class="fc-stat-val" id="ss-l">0</div><div class="fc-stat-lbl">Losses</div></div>
+          <div class="fc-stat-box"><div class="fc-stat-val" id="ss-wr">—</div><div class="fc-stat-lbl">Win Rate</div></div>
         </div>
       </div>
-      <div class="pe">
-        <div class="n"><span class="r" id="prof-elo">—</span></div>
-        <div class="l">Current ELO</div>
-      </div>
-    </div>
 
-    <!-- Edit profile -->
-    <div id="edit-profile-box" style="background:var(--g1);border:.5px solid var(--g2);border-top:none;padding:1.25rem;margin-bottom:1px;display:none">
-      <div class="sl">// Edit Profile</div>
-      <div style="font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g3);margin-bottom:.4rem">Avatar</div>
-      <div id="profile-av-grid" style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem"></div>
-      <div id="frame-picker-wrap" style="display:none;margin-bottom:1rem">
-        <div style="font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g3);margin-bottom:.4rem">Profile Frame</div>
-        <div class="frame-picker">
-          <div class="frame-opt" style="background:#333" onclick="setFrame('none')" title="None">✕</div>
-          <div class="frame-opt" style="background:var(--red)" onclick="setFrame('red')" title="Red"></div>
-          <div class="frame-opt" style="background:#FFD700" onclick="setFrame('gold')" title="Gold"></div>
-          <div class="frame-opt" style="background:#a855f7" onclick="setFrame('elite')" title="Elite"></div>
+      <!-- ELO Chart -->
+      <div class="fc-profile-card" style="margin-top:16px;padding:22px">
+        <div class="fc-section-title" id="elo-chart-lbl">ELO HISTORY</div>
+        <svg id="elo-chart" viewBox="0 0 800 100" preserveAspectRatio="none" style="width:100%;height:90px;margin-top:8px"></svg>
+      </div>
+
+      <!-- Match History -->
+      <div class="fc-profile-card" style="margin-top:16px;padding:22px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="fc-section-title">MATCH HISTORY</div>
+          <span style="font-family:'DM Mono',monospace;font-size:.55rem;color:#6b6f82" id="mh-limit-label">Last 10</span>
+        </div>
+        <div id="match-list"></div>
+      </div>
+
+      <!-- Trophy Wall (clash_pass+) -->
+      <div id="trophy-wall-block" style="display:none;margin-top:16px">
+        <div class="fc-profile-card" style="padding:22px">
+          <div class="fc-section-title">TROPHY WALL</div>
+          <div id="trophy-list" class="fc-trophies-grid" style="margin-top:10px"></div>
+          <div id="trophy-empty" style="font-family:'DM Mono',monospace;font-size:.6rem;color:#6b6f82;margin-top:8px">Win matches to fill your Trophy Wall 🏆</div>
         </div>
       </div>
-      <div style="font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--g3);margin-bottom:.4rem">Nickname</div>
-      <div style="display:flex;gap:.5rem">
-        <input id="edit-nick" type="text" maxlength="18" style="flex:1;background:var(--bk);border:.5px solid var(--g2);color:var(--wh);font-family:'DM Mono',monospace;font-size:.75rem;padding:.55rem .75rem;outline:none" placeholder="Your nickname..."/>
-        <button onclick="saveProfile()" style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:.1em;background:var(--red);color:var(--wh);border:none;padding:.55rem 1.25rem;cursor:crosshair">Save</button>
+
+      <!-- AI Face Report (Elite) -->
+      <div id="ai-report-block" style="display:none;margin-top:16px">
+        <div class="fc-profile-card" style="padding:22px">
+          <div class="fc-section-title">AI FACE REPORT</div>
+          <div id="ai-report-content" style="margin-top:10px"></div>
+        </div>
       </div>
     </div>
-    <div class="pstats">
-      <div class="ps"><div class="n">47</div><div class="l">Matches</div></div>
-      <div class="ps"><div class="n r">31</div><div class="l">Wins</div></div>
-      <div class="ps"><div class="n">16</div><div class="l">Losses</div></div>
-      <div class="ps"><div class="n">66<span class="r">%</span></div><div class="l">Win Rate</div></div>
-    </div>
-    <div class="chart-wrap">
-      <div class="chart-lbl" id="elo-chart-lbl">// ELO History — Last 20 matches</div>
-      <svg id="elo-chart" viewBox="0 0 800 100" preserveAspectRatio="none" style="width:100%;height:100px"></svg>
-    </div>
-    <div class="mhist">
-      <div class="mh-hd"><span>// Match History</span><span id="mh-limit-label">Last 10</span></div>
-      <div id="match-list"></div>
-    </div>
 
+    <!-- RIGHT COLUMN -->
+    <div class="fc-side">
 
-    <!-- AI Face Report (Elite) -->
-    <div id="ai-report-block" style="display:none;margin:1px 0;background:var(--g1);border:.5px solid var(--g2);padding:1.25rem">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.08em;color:#fff;margin-bottom:.4rem">🤖 AI FACE REPORT</div>
-      <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--g3);margin-bottom:.75rem">Monthly biometric analysis of your PSL scan data. Updated every 30 days.</div>
-      <div id="ai-report-content"></div>
-    </div>
+      <!-- Plan card -->
+      <div class="fc-side-card fc-plan-card">
+        <div style="font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:#6b6f82;margin-bottom:4px">Current Plan</div>
+        <div class="fc-plan-title" id="fc-plan-title">FREE</div>
+        <div class="fc-plan-active">● ACTIVE</div>
+        <button onclick="go('pricing')" style="margin-top:14px;width:100%;font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:.1em;background:rgba(255,43,43,.15);color:var(--red);border:1px solid rgba(255,43,43,.3);border-radius:8px;padding:.5rem;cursor:pointer;transition:all .2s" onmouseover="this.style.background='rgba(255,43,43,.25)'" onmouseout="this.style.background='rgba(255,43,43,.15)'">UPGRADE →</button>
+      </div>
 
-    <!-- Trophy Wall (clash_pass+) -->
-    <div id="trophy-wall-block" style="display:none;margin:1px 0;background:var(--g1);border:.5px solid var(--g2);padding:1.25rem">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.08em;color:#fff;margin-bottom:.75rem">🏆 TROPHY WALL</div>
-      <div id="trophy-list" style="display:flex;flex-direction:column;gap:.5rem"></div>
-      <div id="trophy-empty" style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--g3)">Win matches to fill your trophy wall.</div>
-    </div>
+      <!-- Edit profile card -->
+      <div class="fc-side-card">
+        <div style="font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:#6b6f82;margin-bottom:10px">Edit Profile</div>
 
-    <!-- Telegram Elite Access -->
-    <div id="tg-elite-block" style="display:none;margin:1px 0;background:rgba(0,150,136,.06);border:.5px solid rgba(0,150,136,.3);padding:1.25rem">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.08em;color:#fff;margin-bottom:.4rem">✈️ TELEGRAM ELITE ACCESS</div>
-      <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--g3);line-height:1.7;margin-bottom:.75rem">Elite members get private Telegram access — early features, custom tournaments and direct support.</div>
-      <div id="tg-status" style="font-family:'DM Mono',monospace;font-size:.6rem;margin-bottom:.6rem"></div>
-      <button id="tg-connect-btn" onclick="connectTelegram()" style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:.1em;background:rgba(0,150,136,.85);color:#fff;border:none;padding:.5rem 1.5rem;cursor:pointer;border-radius:2px">CONNECT TELEGRAM</button>
-    </div>
+        <!-- Avatar picker -->
+        <div class="fc-input-lbl">Avatar</div>
+        <div id="profile-av-grid" class="fc-av-grid"></div>
 
-    <!-- Referral -->
-    </div>
-  </div>
+        <!-- Frame picker (clash_pass+) -->
+        <div id="frame-picker-wrap" style="display:none;margin-top:12px">
+          <div class="fc-input-lbl">Profile Frame</div>
+          <div class="fc-frame-row">
+            <div class="fc-frame-opt" style="background:#333;display:grid;place-items:center;font-size:.7rem;color:#fff" onclick="setFrame('none')" title="None">✕</div>
+            <div class="fc-frame-opt" style="background:var(--red)" onclick="setFrame('red')" title="Red"></div>
+            <div class="fc-frame-opt" style="background:#FFD700" onclick="setFrame('gold')" title="Gold"></div>
+            <div class="fc-frame-opt" style="background:#a855f7" onclick="setFrame('elite')" title="Elite"></div>
+          </div>
+        </div>
+
+        <!-- Nickname -->
+        <div style="margin-top:12px">
+          <div class="fc-input-lbl">Nickname</div>
+          <input id="edit-nick" type="text" maxlength="18" class="fc-inp" placeholder="Your nickname..."/>
+        </div>
+
+        <button onclick="saveProfile()" class="fc-save-btn" style="margin-top:10px">SAVE PROFILE</button>
+      </div>
+
+      <!-- Telegram Elite Access -->
+      <div id="tg-elite-block" style="display:none">
+        <div class="fc-side-card" style="border-color:rgba(0,150,136,.3);background:rgba(0,150,136,.04)">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em;margin-bottom:6px">✈️ TELEGRAM ELITE</div>
+          <div style="font-family:'DM Mono',monospace;font-size:.55rem;color:#6b6f82;line-height:1.7;margin-bottom:10px">Private access — early features, tournaments, direct support.</div>
+          <div id="tg-status" style="font-family:'DM Mono',monospace;font-size:.58rem;margin-bottom:8px"></div>
+          <button id="tg-connect-btn" onclick="connectTelegram()" style="width:100%;font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:.1em;background:rgba(0,150,136,.8);color:#fff;border:none;border-radius:6px;padding:.5rem;cursor:pointer">CONNECT TELEGRAM</button>
+        </div>
+      </div>
+
+    </div><!-- end right -->
+  </div><!-- end grid -->
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1611,6 +1723,9 @@ function updateNavUser(){
   if(!btn)return;
   if(user){
     btn.textContent=user.avatar+' '+user.nick;
+    // Update new profile avatar
+    const avInner2=document.getElementById('prof-av');
+    if(avInner2&&user.avatar)avInner2.innerHTML=`<span style="font-size:2.8rem">${user.avatar}</span>`;
     btn.onclick=()=>go('profile');
   } else {
     btn.textContent='Sign In';
@@ -1620,19 +1735,65 @@ function updateNavUser(){
 
 function syncProfile(){
   if(!user)return;
+  const plan=getPlan();
+
+  // ── New profile elements ──
+  // Name
+  const nmEl=document.getElementById('prof-nm');
+  if(nmEl){
+    nmEl.textContent=user.nick;
+    nmEl.className='fc-name'+(hasPlan('clash_pass')?' animated':'');
+  }
+  // Meta
+  const metaEl=document.getElementById('prof-meta');
+  if(metaEl)metaEl.textContent='SEASON 1 · '+new Date().toLocaleDateString('en',{month:'short',year:'numeric'}).toUpperCase();
+  // ELO
+  const eloEl2=document.getElementById('prof-elo');
+  if(eloEl2)eloEl2.textContent=sElo.toLocaleString();
+  // Rank badge
+  const rnkEl=document.getElementById('prof-rank');
+  if(rnkEl)rnkEl.textContent=getPlayerTier(sElo);
+  // Plan badge
+  const planBadge=document.getElementById('fc-plan-badge');
+  const planTitle=document.getElementById('fc-plan-title');
+  const planLabels={free:'FREE',clash_pass:'CLASH PASS',elite:'ELITE'};
+  const planClasses={free:'free-badge',clash_pass:'fc-badge',elite:'elite-badge'};
+  if(planBadge){planBadge.textContent=planLabels[plan]||'FREE';planBadge.className='fc-badge '+(planClasses[plan]||'free-badge');}
+  if(planTitle)planTitle.textContent=planLabels[plan]||'FREE';
+  // Main card frame
+  const mainCard=document.getElementById('fc-main-card');
+  if(mainCard){
+    mainCard.classList.remove('premium-frame','elite-frame');
+    if(plan==='elite')mainCard.classList.add('elite-frame');
+    else if(plan==='clash_pass')mainCard.classList.add('premium-frame');
+  }
+  // Avatar frame
+  const avWrap=document.getElementById('fc-avatar-wrap');
+  if(avWrap){
+    avWrap.classList.remove('clash','elite');
+    if(plan==='elite')avWrap.classList.add('elite');
+    else if(plan==='clash_pass')avWrap.classList.add('clash');
+  }
+  // Stats
+  const mEl=document.getElementById('ss-m');if(mEl)mEl.textContent=sWins+sLoss;
+  const wEl=document.getElementById('ss-w');if(wEl)wEl.textContent=sWins;
+  const lEl=document.getElementById('ss-l');if(lEl)lEl.textContent=sLoss;
+  const wrEl=document.getElementById('ss-wr');if(wrEl)wrEl.textContent=(sWins+sLoss>0?Math.round(sWins/(sWins+sLoss)*100)+'%':'—');
+  // Edit nick prefill
+  const nickInp=document.getElementById('edit-nick');if(nickInp&&!nickInp.value)nickInp.value=user.nick;
+
   // Trophy wall & frame
   buildTrophyWall();
   loadFrame();
   buildAIReport();
   updateHistoryLabel();
-  // Show Telegram Elite block for elite users
+  // Telegram Elite block
   const tgBlock=document.getElementById('tg-elite-block');
   if(tgBlock){
-    const isElite=hasPlan('elite');
-    tgBlock.style.display=isElite?'block':'none';
-    if(isElite)checkTelegramStatus();
+    tgBlock.style.display=hasPlan('elite')?'block':'none';
+    if(hasPlan('elite'))checkTelegramStatus();
   }
-  // Sync arena ELO from user data
+  // Sync arena ELO
   if(user.elo){
     sElo=user.elo;sWins=user.wins||0;sLoss=user.losses||0;
     const eloEl=document.getElementById('a-elo');
@@ -1664,7 +1825,7 @@ function openAvatarPicker(){
   const g=document.getElementById('profile-av-grid');
   if(!g){const editBox=document.getElementById('edit-profile-box');if(editBox)editBox.style.display='block';return;}
   const AVATARS=['😤','😎','🥷','👾','🤖','💀','🔥','⚡','🦁','🐺','🦊','👑','🌑','⚔️','🎭','🧊','💎','🏆'];
-  g.innerHTML=AVATARS.map(a=>`<button onclick="setProfileAv('${a}')" style="width:38px;height:38px;font-size:1.2rem;background:var(--bk);border:.5px solid ${(user&&user.avatar===a)?'var(--red)':'var(--g2)'};cursor:crosshair;border-radius:2px">${a}</button>`).join('');
+  g.innerHTML=AVATARS.map(a=>`<button onclick="setProfileAv('${a}')" class="fc-av-btn${(user&&user.avatar===a)?' sel':''}">${a}</button>`).join('');
 }
 
 function setProfileAv(a){
@@ -2542,12 +2703,11 @@ function buildTrophyWall(){
     }
     if(empty)empty.style.display='none';
     list.innerHTML=trophies.map(t=>`
-      <div style="display:flex;align-items:center;gap:.75rem;padding:.5rem .75rem;background:rgba(255,215,0,.04);border:.5px solid rgba(255,215,0,.15);border-radius:2px">
-        <span style="font-size:1.2rem">🏆</span>
-        <div style="flex:1">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:.08em">${t.myScore} <span style="color:var(--g3)">vs</span> ${t.oppScore} · <span style="color:var(--g3)">${t.opp}</span></div>
-          <div style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--g3)">${t.date} · ELO ${t.elo}</div>
-        </div>
+      <div class="fc-trophy-card">
+        <div style="font-size:1.8rem">🏆</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:.06em;margin-top:4px">${t.myScore} <span style="opacity:.5">vs</span> ${t.oppScore}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.52rem;color:#6b6f82;margin-top:2px">vs ${t.opp}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:#6b6f82">${t.date}</div>
       </div>`).join('');
   }catch(e){}
 }
@@ -2560,10 +2720,20 @@ function setFrame(frame){
   showToast('Frame updated!');
 }
 function applyFrame(frame){
+  // Legacy prof-head (fallback)
   const head=document.querySelector('.prof-head');
-  if(!head)return;
-  ['prof-frame-none','prof-frame-red','prof-frame-gold','prof-frame-elite'].forEach(cl=>head.classList.remove(cl));
-  if(frame&&frame!=='none')head.classList.add('prof-frame-'+frame);
+  if(head){
+    ['prof-frame-none','prof-frame-red','prof-frame-gold','prof-frame-elite'].forEach(cl=>head.classList.remove(cl));
+    if(frame&&frame!=='none')head.classList.add('prof-frame-'+frame);
+  }
+  // New fc-avatar-wrap glow
+  const avWrap=document.getElementById('fc-avatar-wrap');
+  if(avWrap){
+    avWrap.style.boxShadow='';
+    if(frame==='red')avWrap.style.boxShadow='0 0 0 3px var(--red),0 0 20px rgba(255,45,45,.4)';
+    else if(frame==='gold')avWrap.style.boxShadow='0 0 0 3px #FFD700,0 0 20px rgba(255,215,0,.4)';
+    else if(frame==='elite')avWrap.style.boxShadow='0 0 0 3px #a855f7,0 0 0 6px rgba(168,85,247,.2),0 0 24px rgba(168,85,247,.5)';
+  }
   const badge=document.getElementById('active-frame-badge');
   const labels={red:'🔴 Red Frame',gold:'🟡 Gold Frame',elite:'💜 Elite Frame'};
   if(badge){
