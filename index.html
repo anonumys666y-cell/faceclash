@@ -666,6 +666,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
   <div class="nav-right">
     <button class="nav-ham" onclick="toggleMob()"><span></span><span></span><span></span></button>
     <button id="nav-user-btn" class="nav-user" onclick="openAuth()">Sign In</button>
+    <button id="crown-btn" onclick="crownClick()" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:.3rem .4rem;opacity:.18;transition:opacity .2s;line-height:1" title="" aria-label="">👑</button>
     <button class="nav-cta" onclick="go('arena')">Enter Arena →</button>
   </div>
 </nav>
@@ -3418,6 +3419,81 @@ sendChat=function(){
   }
   _origSendChat();
 };
+
+// ════════════════════════════
+// DEV PANEL — global functions
+// ════════════════════════════
+console.log('[DEV] Dev panel script loaded');
+
+function toggleDevPanel(){
+  var p = document.getElementById('dev-panel');
+  if(!p){ console.error('[DEV] #dev-panel not found in DOM'); return; }
+  var isOpen = p.classList.contains('open');
+  if(isOpen){ p.classList.remove('open'); console.log('[DEV] closed'); }
+  else { p.classList.add('open'); if(typeof devUpdatePlanBtns==='function')devUpdatePlanBtns(); console.log('[DEV] opened'); }
+}
+
+window.openDevPanel = function(){
+  var p = document.getElementById('dev-panel');
+  if(!p){ console.error('[DEV] #dev-panel not found'); return; }
+  p.classList.add('open');
+  if(typeof devUpdatePlanBtns==='function') devUpdatePlanBtns();
+  console.log('[DEV] opened via openDevPanel()');
+};
+
+window.closeDevPanel = function(){
+  var p = document.getElementById('dev-panel');
+  if(!p){ console.error('[DEV] #dev-panel not found'); return; }
+  p.classList.remove('open');
+  console.log('[DEV] closed via closeDevPanel()');
+};
+
+// Hotkey: Ctrl+Shift+X
+document.addEventListener('keydown', function(e){
+  var tag = (document.activeElement && document.activeElement.tagName || '').toUpperCase();
+  if(tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if(e.ctrlKey && e.shiftKey && (e.key === 'X' || e.key === 'x')){
+    e.preventDefault();
+    toggleDevPanel();
+  }
+});
+
+// URL param: ?dev=1
+(function(){
+  try {
+    if(window.location.search.indexOf('dev=1') !== -1){
+      window.addEventListener('DOMContentLoaded', function(){ window.openDevPanel(); });
+    }
+  } catch(e){}
+})();
+
+// ── Crown secret plan toggle ──
+var _crownClicks=0, _crownTimer=null;
+var _crownPlans=['free','clash_pass','elite'];
+var _crownLabels={'free':'FREE','clash_pass':'CLASH PASS','elite':'TRUE ADAM ELITE'};
+
+function crownClick(){
+  if(_crownTimer) clearTimeout(_crownTimer);
+  _crownClicks++;
+  // Briefly flash crown
+  var btn=document.getElementById('crown-btn');
+  if(btn){btn.style.opacity='0.6';setTimeout(function(){btn.style.opacity='0.18';},200);}
+
+  if(_crownClicks>=3){
+    _crownClicks=0;
+    // Cycle plan
+    var cur=getPlan();
+    var idx=_crownPlans.indexOf(cur);
+    var next=_crownPlans[(idx+1)%_crownPlans.length];
+    setPlan(next);
+    syncProfile();buildTrophyWall();loadFrame();buildAIReport();updateHistoryLabel();
+    showToast('👑 PLAN: '+_crownLabels[next]);
+    // Brief crown glow
+    if(btn){btn.style.opacity='1';setTimeout(function(){btn.style.opacity='0.18';},600);}
+  } else {
+    _crownTimer=setTimeout(function(){_crownClicks=0;},3000);
+  }
+}
 </script>
 <!-- ══════════ STREAMERS ══════════ -->
 <div id="p-streamers" class="page">
