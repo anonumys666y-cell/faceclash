@@ -602,6 +602,20 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 
 /* ══ END PREMIUM v3 ══ */
 
+/* ══ DEV PANEL ══ */
+#dev-panel{display:none;position:fixed;bottom:1rem;right:1rem;width:260px;background:rgba(5,5,8,.97);border:1px solid rgba(255,45,45,.4);border-radius:4px;z-index:99999;font-family:'DM Mono',monospace;box-shadow:0 0 40px rgba(255,45,45,.15)}
+#dev-panel.open{display:block}
+#dev-header{display:flex;justify-content:space-between;align-items:center;padding:.5rem .75rem;border-bottom:.5px solid rgba(255,45,45,.2);font-size:.6rem;letter-spacing:.12em;color:rgba(255,45,45,.8)}
+#dev-body{padding:.5rem .5rem .75rem}
+.dev-section{font-size:.5rem;letter-spacing:.1em;color:rgba(255,255,255,.3);padding:.5rem .25rem .2rem;text-transform:uppercase}
+.dev-btn{display:block;width:100%;text-align:left;background:rgba(255,255,255,.04);border:.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.7);font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.06em;padding:.35rem .6rem;cursor:pointer;margin-bottom:2px;border-radius:2px;transition:background .15s}
+.dev-btn:hover{background:rgba(255,45,45,.15);border-color:rgba(255,45,45,.4);color:#fff}
+.dev-btn.red{color:rgba(255,80,80,.8)}
+.dev-plan-row{display:flex;gap:3px;margin-bottom:3px}
+.dev-plan-btn{flex:1;background:rgba(255,255,255,.04);border:.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);font-family:'DM Mono',monospace;font-size:.52rem;padding:.3rem .2rem;cursor:pointer;text-align:center;border-radius:2px;transition:all .15s}
+.dev-plan-btn:hover,.dev-plan-btn.active{background:rgba(255,45,45,.2);border-color:var(--red);color:#fff}
+
+
 
 /* ── Profile Frame ── */
 .prof-frame-none .av{box-shadow:none}
@@ -614,7 +628,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 .frame-opt.active{border-color:#fff}
 
 /* ── Victory Takeover ── */
-#victory-takeover{display:none;position:fixed;inset:0;z-index:9000;background:#000;flex-direction:column;align-items:center;justify-content:center;animation:vtFadeIn .4s ease}
+#victory-takeover{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.97);flex-direction:column;align-items:center;justify-content:center;animation:vtFadeIn .4s ease;text-align:center;padding:2rem}
 #victory-takeover.show{display:flex}
 @keyframes vtFadeIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 .vt-crown{font-size:4rem;animation:vtBounce .6s ease infinite alternate;margin-bottom:.5rem}
@@ -739,6 +753,38 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
   <div class="vt-nick" id="vt-nick"></div>
   <div class="vt-score" id="vt-score"></div>
   <button onclick="closeVictoryTakeover()" style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.12em;background:var(--red);color:#fff;border:none;padding:.6rem 2rem;cursor:pointer;margin-top:.5rem">CONTINUE →</button>
+</div>
+
+
+<!-- ══ DEV PANEL ══ -->
+<div id="dev-panel">
+  <div id="dev-header">
+    <span>⚙ DEV PANEL</span>
+    <span style="cursor:pointer;opacity:.5" onclick="document.getElementById('dev-panel').classList.remove('open')">✕</span>
+  </div>
+  <div id="dev-body">
+    <div class="dev-section">Plan</div>
+    <div class="dev-plan-row">
+      <div class="dev-plan-btn" id="dp-free" onclick="devSetPlan('free')">FREE</div>
+      <div class="dev-plan-btn" id="dp-clash" onclick="devSetPlan('clash_pass')">CLASH</div>
+      <div class="dev-plan-btn" id="dp-elite" onclick="devSetPlan('elite')">ELITE</div>
+    </div>
+
+    <div class="dev-section">Match</div>
+    <button class="dev-btn" onclick="devForceWin()">🏆 Force Win</button>
+    <button class="dev-btn" onclick="devForceLose()">💀 Force Lose</button>
+    <button class="dev-btn" onclick="devFakeMatches()">📋 Add Fake Matches</button>
+
+    <div class="dev-section">Features</div>
+    <button class="dev-btn" onclick="devVictory()">🎊 Victory Animation</button>
+    <button class="dev-btn" onclick="devEloShield()">🛡️ Trigger ELO Shield</button>
+    <button class="dev-btn" onclick="devAIReport()">🤖 Generate AI Report</button>
+    <button class="dev-btn" onclick="devTrophy()">🏆 Add Trophy</button>
+
+    <div class="dev-section">Reset</div>
+    <button class="dev-btn red" onclick="devResetProfile()">↺ Reset Profile</button>
+    <button class="dev-btn red" onclick="devClearStorage()">🗑 Clear localStorage</button>
+  </div>
 </div>
 
 <!-- ══ PSL SCAN SCREEN ══ -->
@@ -871,6 +917,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
         <button class="a-tab act" id="at-ranked" onclick="switchMode('ranked')">⚔ 1v1 Ranked</button>
         <button class="a-tab" id="at-2v2" onclick="switchMode('2v2')">👥 2v2</button>
         <button class="a-tab" id="at-lobby" onclick="switchMode('lobby')">🔒 Private</button>
+        <button class="a-tab" id="at-spectate" onclick="switchMode('spectate')">👁 Spectate</button>
       </div>
       <div style="display:flex;align-items:center;gap:.5rem">
         <div class="a-pill ap-idle" id="a-pill"><span class="ap-dot"></span><span id="a-pill-txt">Idle</span></div>
@@ -1033,6 +1080,19 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
             <button onclick="copyTeamCode()" style="font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;background:var(--g2);color:var(--wh);border:none;padding:.5rem .875rem;cursor:crosshair">Copy</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- SPECTATE PANEL -->
+    <div class="a-panel" id="panel-spectate">
+      <div class="ranked-wrap">
+        <div class="sl" style="margin-bottom:.75rem">// Spectator Mode</div>
+        <div id="spectate-lock" style="text-align:center;padding:2rem 1rem">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.08em;margin-bottom:.5rem">👁 SPECTATOR MODE</div>
+          <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--g3);margin-bottom:1rem">Watch live matches. Requires CLASH PASS or higher.</div>
+          <button onclick="go('pricing')" class="btn-p" style="font-size:.85rem">UPGRADE TO WATCH →</button>
+        </div>
+        <div id="spectate-list" style="display:none;flex-direction:column;gap:.5rem;"></div>
       </div>
     </div>
 
@@ -1224,6 +1284,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
       <div>
         <div class="pn" id="prof-nm">—</div>
         <div class="pm" id="prof-meta">Sign in to see your profile</div>
+        <div id="active-frame-badge" style="display:none;font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.08em;color:var(--g3);margin-top:.25rem"></div>
         <div style="margin-top:.5rem;display:flex;gap:.4rem;flex-wrap:wrap">
           <span class="tpill tp-ot" id="prof-rank">—</span>
         </div>
@@ -1261,14 +1322,21 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
       <div class="ps"><div class="n">66<span class="r">%</span></div><div class="l">Win Rate</div></div>
     </div>
     <div class="chart-wrap">
-      <div class="chart-lbl">// ELO History — Last 20 matches</div>
+      <div class="chart-lbl" id="elo-chart-lbl">// ELO History — Last 20 matches</div>
       <svg id="elo-chart" viewBox="0 0 800 100" preserveAspectRatio="none" style="width:100%;height:100px"></svg>
     </div>
     <div class="mhist">
-      <div class="mh-hd"><span>// Match History</span><span>Last 10</span></div>
+      <div class="mh-hd"><span>// Match History</span><span id="mh-limit-label">Last 10</span></div>
       <div id="match-list"></div>
     </div>
 
+
+    <!-- AI Face Report (Elite) -->
+    <div id="ai-report-block" style="display:none;margin:1px 0;background:var(--g1);border:.5px solid var(--g2);padding:1.25rem">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.08em;color:#fff;margin-bottom:.4rem">🤖 AI FACE REPORT</div>
+      <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--g3);margin-bottom:.75rem">Monthly biometric analysis of your PSL scan data. Updated every 30 days.</div>
+      <div id="ai-report-content"></div>
+    </div>
 
     <!-- Trophy Wall (clash_pass+) -->
     <div id="trophy-wall-block" style="display:none;margin:1px 0;background:var(--g1);border:.5px solid var(--g2);padding:1.25rem">
@@ -1299,8 +1367,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 function getPlan(){try{return localStorage.getItem('fc_plan')||'free';}catch(e){return 'free';}}
 function hasPlan(p){const pl=getPlan();if(p==='clash_pass')return pl==='clash_pass'||pl==='elite';if(p==='elite')return pl==='elite';return true;}
 function setPlan(p){try{localStorage.setItem('fc_plan',p);}catch(e){}}
-// DEV: expose for testing — window.setPlan('elite') in console
-window.setPlan=setPlan;
+
 
 // ─── SUPABASE ───
 const STRIPE_PK = 'pk_test_51TV8L9LeXmxIBhpsTOumDRuhBqe6YEjVgQIDL9xekBncXMjanqHBcuypnwN6lzZ4DGwrIzvwzPIAO8yFjUca66Rf00ayooL9Lk';
@@ -1405,7 +1472,7 @@ function go(id){
   if(NAVS[id])document.getElementById(NAVS[id]).classList.add('active');
   window.scrollTo(0,0);
   if(id==='leaderboard')buildLB('all');
-  if(id==='profile'){buildChart();buildHistory();}
+  if(id==='profile'){buildChart();buildHistory();buildTrophyWall();loadFrame();buildAIReport();updateHistoryLabel();}
   // Save current screen
   try{sessionStorage.setItem('fc_screen',id);}catch(e){}
 }
@@ -1555,10 +1622,12 @@ function syncProfile(){
   // Trophy wall & frame
   buildTrophyWall();
   loadFrame();
+  buildAIReport();
+  updateHistoryLabel();
   // Show Telegram Elite block for elite users
   const tgBlock=document.getElementById('tg-elite-block');
   if(tgBlock){
-    const isElite=user.plan==='elite'||user.plan==='clash_pass'||(()=>{try{return localStorage.getItem('fc_plan')==='elite';}catch(e){return false;}})();
+    const isElite=hasPlan('elite');
     tgBlock.style.display=isElite?'block':'none';
     if(isElite)checkTelegramStatus();
   }
@@ -2357,12 +2426,19 @@ function findMatch(){
   document.getElementById('btn-match').style.display='none';
   document.getElementById('btn-next').style.display='none';
   // Show searching state - waiting for real opponent
+  // Priority matchmaking for elite
+  const isPriority=hasPlan('elite');
+  if(isPriority){
+    const pill=document.getElementById('a-pill');
+    if(pill){pill.innerHTML='⚡ PRIORITY QUEUE';pill.style.background='rgba(168,85,247,.2)';pill.style.color='#a855f7';}
+    showToast('⚡ Priority matchmaking active');
+  }
   let d=0;
   const di=setInterval(()=>{
     const e=document.getElementById('opp-s');
-    if(e){d=(d+1)%4;e.textContent='Searching'+'.'.repeat(d+1);}
-  },350);
-  document.getElementById('opp-t').textContent='Finding opponent...';
+    if(e){d=(d+1)%4;e.textContent=(isPriority?'⚡ ':'')+'Searching'+'.'.repeat(d+1);}
+  },isPriority?250:350);
+  document.getElementById('opp-t').textContent=isPriority?'⚡ Priority Match...':'Finding opponent...';
   // Add cancel button
   const actions=document.getElementById('a-actions')||document.querySelector('.a-actions');
   const cancelBtn=document.createElement('button');
@@ -2375,6 +2451,9 @@ function findMatch(){
     document.getElementById('btn-match').style.display='inline-block';
     document.getElementById('opp-t').textContent='Opponent';
     document.getElementById('opp-s').textContent='Find a match to start';
+    // Reset priority pill
+    const pill=document.getElementById('a-pill');
+    if(pill){pill.innerHTML='● IDLE';pill.style.background='';pill.style.color='';}
     setPill('ready');
   };
   if(actions)actions.appendChild(cancelBtn);
@@ -2455,7 +2534,11 @@ function buildTrophyWall(){
   block.style.display='block';
   try{
     const trophies=JSON.parse(localStorage.getItem('fc_trophies')||'[]');
-    if(trophies.length===0){list.innerHTML='';if(empty)empty.style.display='block';return;}
+    if(trophies.length===0){
+      list.innerHTML='';
+      if(empty){empty.style.display='block';empty.textContent='Win matches to fill your Trophy Wall 🏆';}
+      return;
+    }
     if(empty)empty.style.display='none';
     list.innerHTML=trophies.map(t=>`
       <div style="display:flex;align-items:center;gap:.75rem;padding:.5rem .75rem;background:rgba(255,215,0,.04);border:.5px solid rgba(255,215,0,.15);border-radius:2px">
@@ -2478,8 +2561,14 @@ function setFrame(frame){
 function applyFrame(frame){
   const head=document.querySelector('.prof-head');
   if(!head)return;
-  ['prof-frame-none','prof-frame-red','prof-frame-gold','prof-frame-elite'].forEach(c=>head.classList.remove(c));
+  ['prof-frame-none','prof-frame-red','prof-frame-gold','prof-frame-elite'].forEach(cl=>head.classList.remove(cl));
   if(frame&&frame!=='none')head.classList.add('prof-frame-'+frame);
+  const badge=document.getElementById('active-frame-badge');
+  const labels={red:'🔴 Red Frame',gold:'🟡 Gold Frame',elite:'💜 Elite Frame'};
+  if(badge){
+    if(frame&&frame!=='none'){badge.textContent=labels[frame]||'';badge.style.display='block';}
+    else badge.style.display='none';
+  }
 }
 function loadFrame(){
   try{
@@ -2489,6 +2578,94 @@ function loadFrame(){
     const wrap=document.getElementById('frame-picker-wrap');
     if(wrap)wrap.style.display=hasPlan('clash_pass')?'block':'none';
   }catch(e){}
+}
+
+// ── 1. Match history label ──
+function updateHistoryLabel(){
+  const el=document.getElementById('mh-limit-label');
+  if(el)el.textContent=hasPlan('clash_pass')?'Full History':'Last 10';
+}
+
+// ── 3. Spectator mode ──
+const FAKE_MATCHES=[
+  {p1:'ShadowKing',p2:'NeonFace',elo1:1420,elo2:1380,status:'LIVE',score:'7.2 vs 6.8'},
+  {p1:'CryptoJaw',p2:'AlphaLook',elo1:1650,elo2:1590,status:'LIVE',score:'8.1 vs 7.9'},
+  {p1:'GhostRider',p2:'IronChin',elo1:1200,elo2:1180,status:'STARTING',score:'—'},
+  {p1:'ViperFace',p2:'BladeStrike',elo1:1800,elo2:1750,status:'LIVE',score:'9.0 vs 8.7'},
+  {p1:'ZeroKelvin',p2:'DarkMatter',elo1:1100,elo2:1090,status:'STARTING',score:'—'},
+];
+
+function buildSpectateList(){
+  const lockEl=document.getElementById('spectate-lock');
+  const listEl=document.getElementById('spectate-list');
+  if(!lockEl||!listEl)return;
+  if(!hasPlan('clash_pass')){
+    lockEl.style.display='block';
+    listEl.style.display='none';
+    return;
+  }
+  lockEl.style.display='none';
+  listEl.style.display='flex';
+  listEl.style.flexDirection='column';
+  listEl.innerHTML=`<div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--g3);margin-bottom:.5rem;letter-spacing:.08em">LIVE MATCHES</div>`+
+  FAKE_MATCHES.map((m,i)=>`
+    <div onclick="spectateMatch(${i})" style="display:flex;align-items:center;gap:.75rem;padding:.65rem .9rem;background:rgba(255,255,255,.03);border:.5px solid var(--g2);cursor:pointer;transition:border-color .2s" onmouseover="this.style.borderColor='rgba(255,45,45,.4)'" onmouseout="this.style.borderColor='var(--g2)'">
+      <div style="flex:1">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.06em">${m.p1} <span style="color:var(--g3)">vs</span> ${m.p2}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--g3)">${m.elo1} ELO vs ${m.elo2} ELO · ${m.score}</div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:.55rem;padding:.2rem .5rem;background:${m.status==='LIVE'?'rgba(255,45,45,.15)':'rgba(74,222,128,.12)'};color:${m.status==='LIVE'?'var(--red)':'var(--grn)'};border-radius:2px">${m.status}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--g3)">WATCH →</div>
+    </div>`).join('');
+}
+
+function spectateMatch(i){
+  const m=FAKE_MATCHES[i];
+  showToast(`👁 Spectating: ${m.p1} vs ${m.p2}`);
+  // Future: open real match viewer
+}
+
+// ── 5. AI Face Report ──
+function buildAIReport(){
+  const block=document.getElementById('ai-report-block');
+  const content=document.getElementById('ai-report-content');
+  if(!block)return;
+  if(!hasPlan('elite')){block.style.display='none';return;}
+  block.style.display='block';
+  try{
+    const lastReport=localStorage.getItem('fc_ai_report');
+    const lastDate=localStorage.getItem('fc_ai_report_date');
+    const monthMs=30*24*60*60*1000;
+    const needsNew=!lastReport||!lastDate||(Date.now()-parseInt(lastDate))>monthMs;
+    if(needsNew){
+      // Generate mock report
+      const traits=['Strong jawline','High cheekbone definition','Symmetrical features','Defined brow ridge','Clear skin tone'];
+      const score=(7+Math.random()*2.5).toFixed(1);
+      const report={score,traits:traits.slice(0,3+Math.floor(Math.random()*2)),date:new Date().toLocaleDateString(),matches:_localMatches.length};
+      localStorage.setItem('fc_ai_report',JSON.stringify(report));
+      localStorage.setItem('fc_ai_report_date',Date.now().toString());
+      renderAIReport(report);
+    } else {
+      renderAIReport(JSON.parse(lastReport));
+    }
+  }catch(e){}
+}
+
+function renderAIReport(report){
+  const content=document.getElementById('ai-report-content');
+  if(!content)return;
+  content.innerHTML=`
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:.75rem;align-items:center;margin-bottom:1rem">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:3rem;color:var(--red);line-height:1">${report.score}</div>
+      <div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:.08em">PSL SCORE</div>
+        <div style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--g3)">Generated ${report.date} · Based on ${report.matches} matches</div>
+      </div>
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--g3);margin-bottom:.5rem;letter-spacing:.08em">DETECTED TRAITS</div>
+    ${report.traits.map(t=>`<div style="display:flex;align-items:center;gap:.5rem;padding:.3rem 0;border-bottom:.5px solid var(--g2)"><span style="color:var(--grn)">✓</span><span style="font-family:'DM Mono',monospace;font-size:.6rem">${t}</span></div>`).join('')}
+    <div style="font-family:'DM Mono',monospace;font-size:.55rem;color:var(--g3);margin-top:.75rem">Next report in 30 days</div>
+  `;
 }
 
 function finishMatch(opp){
@@ -2592,7 +2769,10 @@ function resetArena(){
 
 // ─── MODE SWITCH ───
 function switchMode(m){
+  if(m==='spectate')setTimeout(buildSpectateList,50);
   document.getElementById('panel-ranked').classList.toggle('act',m==='ranked');
+  if(document.getElementById('panel-spectate'))document.getElementById('panel-spectate').classList.toggle('act',m==='spectate');
+  if(document.getElementById('at-spectate'))document.getElementById('at-spectate').classList.toggle('act',m==='spectate');
   document.getElementById('panel-2v2').classList.toggle('act',m==='2v2');
   document.getElementById('panel-lobby').classList.toggle('act',m==='lobby');
   document.getElementById('at-ranked').classList.toggle('act',m==='ranked');
@@ -3054,7 +3234,8 @@ finishMatch=function(opp){
 function buildHistory(){
   const c=document.getElementById('match-list');if(!c)return;
   if(!c.parentElement)return;
-  const M=_localMatches.slice(0,10);
+  const limit=hasPlan('clash_pass')?_localMatches.length:10;
+  const M=_localMatches.slice(0,limit);
   if(M.length===0){c.innerHTML='<div style="padding:2rem;text-align:center;color:#6B6B78">No matches yet. Play your first match!</div>';return;}
   c.innerHTML=M.map(m=>`<div class="mi"><div class="mres ${m.w?'w':'l'}">${m.w?'WIN':'LOSS'}</div><div><div class="mopp">vs ${m.o||'?'}</div><div class="mtime">${(m.my||0).toFixed?m.my.toFixed(1):m.my} vs ${(m.th||0).toFixed?m.th.toFixed(1):m.th} · ${m.t||'recently'}</div></div><div class="msc">${(m.my||0).toFixed?m.my.toFixed(1):m.my}<span style="color:var(--g3);font-size:.7rem"> vs </span>${(m.th||0).toFixed?m.th.toFixed(1):m.th}</div><div class="melo ${(m.e||0)>0?'eu':'ed'}">${(m.e||0)>0?'+':''}${m.e||0} ELO</div></div>`).join('');
 }
