@@ -1289,7 +1289,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
           <li class="off">ELO shield</li>
           <li class="off">Spectator mode</li>
         </ul>
-        <button class="pc-btn" onclick="openAuth()">Sign in with Google</button>
+        <button class="pc-btn" id="pc-btn-free" onclick="openAuth()">Sign in with Google</button>
       </div>
       <!-- CLASH PASS -->
       <div class="pc feat">
@@ -1307,7 +1307,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
           <li class="off">Priority matchmaking</li>
           <li class="off">Streamer badge</li>
         </ul>
-        <button class="pc-btn feat" onclick="window.open('https://buy.stripe.com/test_8x25kE2GEft2aw1dHPfjG00','_blank')">Get CLASH Pass</button>
+        <button class="pc-btn feat" id="pc-btn-clash" onclick="window.open(\'https://buy.stripe.com/test_8x25kE2GEft2aw1dHPfjG00\',\'_blank\')">Get CLASH Pass</button>
       </div>
       <!-- TRUE ADAM -->
       <div class="pc">
@@ -1323,7 +1323,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
           <li class="on">Profile Trophy Wall</li>
           <li class="on">Referral revenue share</li>
         </ul>
-        <button class="pc-btn" onclick="window.open('https://buy.stripe.com/test_14A8wQ6WUbcM9rXeLTfjG01','_blank')">Go Elite</button>
+        <button class="pc-btn" id="pc-btn-elite" onclick="window.open(\'https://buy.stripe.com/test_14A8wQ6WUbcM9rXeLTfjG01\',\'_blank\')">Go Elite</button>
       </div>
     </div>
 
@@ -1433,9 +1433,19 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
       <div class="fc-side-card">
         <div style="font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:#6b6f82;margin-bottom:10px">Edit Profile</div>
 
-        <!-- Avatar picker -->
+        <!-- Avatar upload -->
         <div class="fc-input-lbl">Avatar</div>
-        <div id="profile-av-grid" class="fc-av-grid"></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+          <div id="profile-av-preview" style="width:52px;height:52px;border-radius:50%;background:linear-gradient(145deg,#101017,#020204);border:1px solid rgba(255,255,255,.1);display:grid;place-items:center;overflow:hidden;flex-shrink:0">
+            <svg viewBox="0 0 80 80" width="36" height="36" fill="none"><circle cx="40" cy="28" r="16" fill="rgba(255,43,43,.22)" stroke="rgba(255,43,43,.4)" stroke-width="1.5"/><path d="M12 70c0-15.464 12.536-28 28-28s28 12.536 28 28" stroke="rgba(255,43,43,.4)" stroke-width="1.5" fill="rgba(255,43,43,.08)"/></svg>
+          </div>
+          <div style="flex:1">
+            <button onclick="document.getElementById('av-file-input').click()" style="width:100%;font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.08em;background:rgba(255,255,255,.06);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:.45rem .75rem;cursor:pointer" onmouseover="this.style.borderColor='rgba(255,43,43,.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,.15)'">UPLOAD PHOTO</button>
+            <div style="font-family:'DM Mono',monospace;font-size:.5rem;color:#6b6f82;margin-top:4px">JPG, PNG - Max 2MB</div>
+          </div>
+        </div>
+        <input type="file" id="av-file-input" accept="image/*" style="display:none" onchange="handleAvatarUpload(event)">
+        <div id="profile-av-grid" style="display:none"></div>
 
         <!-- Frame picker (clash_pass+) -->
         <div id="frame-picker-wrap" style="display:none;margin-top:12px">
@@ -1585,6 +1595,7 @@ function go(id){
   if(NAVS[id])document.getElementById(NAVS[id]).classList.add('active');
   window.scrollTo(0,0);
   if(id==='leaderboard')buildLB('all');
+  if(id==='pricing')setTimeout(updatePricingButtons,50);
   if(id==='profile'){buildChart();buildHistory();buildTrophyWall();loadFrame();buildAIReport();updateHistoryLabel();}
   // Save current screen
   try{sessionStorage.setItem('fc_screen',id);}catch(e){}
@@ -3662,6 +3673,82 @@ function crownClick(){
     if(btn){btn.style.opacity='1';setTimeout(function(){btn.style.opacity='0.18';},600);}
   } else {
     _crownTimer=setTimeout(function(){_crownClicks=0;},3000);
+  }
+}
+
+var _crownClicks=0, _crownTimer=null;
+var _crownPlans=['free','clash_pass','elite'];
+var _crownLabels={'free':'FREE','clash_pass':'CLASH PASS','elite':'TRUE ADAM ELITE'};
+function crownClick(){
+  if(_crownTimer)clearTimeout(_crownTimer);
+  _crownClicks++;
+  var btn=document.getElementById('crown-btn');
+  if(btn){btn.style.opacity='0.7';setTimeout(function(){btn.style.opacity='0.15';},150);}
+  if(_crownClicks>=3){
+    _crownClicks=0;_crownTimer=null;
+    var cur=getPlan();
+    var ci=_crownPlans.indexOf(cur);if(ci<0)ci=0;
+    var next=_crownPlans[(ci+1)%_crownPlans.length];
+    setPlan(next);
+    updatePricingButtons();
+    if(typeof syncProfile==='function')syncProfile();
+    if(typeof buildTrophyWall==='function')buildTrophyWall();
+    if(typeof loadFrame==='function')loadFrame();
+    if(typeof buildAIReport==='function')buildAIReport();
+    if(typeof updateHistoryLabel==='function')updateHistoryLabel();
+    showToast('👑 PLAN: '+(_crownLabels[next]||next));
+    if(btn){btn.style.opacity='1';setTimeout(function(){btn.style.opacity='0.15';},800);}
+  } else {
+    _crownTimer=setTimeout(function(){_crownClicks=0;},3000);
+  }
+}
+
+function handleAvatarUpload(e){
+  var file=e.target.files[0];
+  if(!file)return;
+  if(file.size>2*1024*1024){showToast('Image too large - max 2MB');return;}
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var dataUrl=ev.target.result;
+    try{localStorage.setItem('fc_avatar_img',dataUrl);}catch(err){showToast('Storage full');return;}
+    var preview=document.getElementById('profile-av-preview');
+    if(preview)preview.innerHTML='<img src="'+dataUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    var avInner=document.getElementById('prof-av');
+    if(avInner)avInner.innerHTML='<img src="'+dataUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    if(user)user.avatar='[photo]';
+    lsSave();showToast('Avatar updated!');
+  };
+  reader.readAsDataURL(file);
+}
+
+function loadAvatarImage(){
+  try{
+    var img=localStorage.getItem('fc_avatar_img');
+    if(!img)return;
+    var avInner=document.getElementById('prof-av');
+    if(avInner)avInner.innerHTML='<img src="'+img+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    var preview=document.getElementById('profile-av-preview');
+    if(preview)preview.innerHTML='<img src="'+img+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+  }catch(e){}
+}
+
+function updatePricingButtons(){
+  var plan=getPlan();
+  var freeBtn=document.getElementById('pc-btn-free');
+  if(freeBtn){
+    if(plan==='free'){freeBtn.textContent='✓ CURRENT PLAN';freeBtn.style.cssText='background:rgba(74,222,128,.15);color:#4ade80;border:1px solid rgba(74,222,128,.3)';freeBtn.disabled=true;}
+    else{freeBtn.textContent='Sign in with Google';freeBtn.style.cssText='';freeBtn.disabled=false;freeBtn.onclick=function(){openAuth();};}
+  }
+  var clashBtn=document.getElementById('pc-btn-clash');
+  if(clashBtn){
+    if(plan==='clash_pass'){clashBtn.textContent='✓ YOUR CURRENT PLAN';clashBtn.style.cssText='background:rgba(255,43,43,.15);color:var(--red);border:1px solid rgba(255,43,43,.3)';clashBtn.disabled=true;}
+    else if(plan==='elite'){clashBtn.textContent='INCLUDED IN ELITE';clashBtn.style.cssText='background:rgba(184,134,11,.1);color:#d4a520;border:1px solid rgba(184,134,11,.3)';clashBtn.disabled=true;}
+    else{clashBtn.textContent='Get CLASH Pass';clashBtn.style.cssText='';clashBtn.disabled=false;}
+  }
+  var eliteBtn=document.getElementById('pc-btn-elite');
+  if(eliteBtn){
+    if(plan==='elite'){eliteBtn.textContent='✓ YOUR CURRENT PLAN';eliteBtn.style.cssText='background:rgba(184,134,11,.15);color:#d4a520;border:1px solid rgba(184,134,11,.3)';eliteBtn.disabled=true;}
+    else{eliteBtn.textContent='Go Elite';eliteBtn.style.cssText='';eliteBtn.disabled=false;}
   }
 }
 </script>
