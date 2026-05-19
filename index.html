@@ -620,7 +620,7 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
 .fc-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:7px;background:rgba(255,43,43,.16);border:1px solid rgba(255,43,43,.35);color:#ff4b4b;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;font-weight:800}
 .fc-badge.elite-badge{background:rgba(184,134,11,.14);border-color:rgba(184,134,11,.4);color:#d4a520}
 .fc-badge.free-badge{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.25);color:#4ade80}
-.fc-name{margin:0 0 4px;font-size:clamp(32px,4vw,52px);line-height:.95;letter-spacing:2px;text-transform:uppercase;font-weight:900;color:#fff;text-shadow:0 0 25px rgba(255,43,43,.28)}
+.fc-name{margin:0 0 4px;font-size:clamp(20px,3.5vw,48px);line-height:.95;letter-spacing:2px;text-transform:uppercase;font-weight:900;color:#fff;text-shadow:0 0 25px rgba(255,43,43,.28);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fc-name.animated{background:linear-gradient(90deg,#fff,#ff2b2b,#ff9a9a,#fff);background-size:250% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:fcNickFlow 4s linear infinite}
 @keyframes fcNickFlow{from{background-position:0% 50%}to{background-position:250% 50%}}
 .fc-meta{color:#8b8fa3;letter-spacing:2px;font-family:'DM Mono',monospace;font-size:.6rem;margin-bottom:8px}
@@ -664,6 +664,22 @@ table tr.me td{background:rgba(255,45,45,.06);border-left:2px solid var(--red)}
   .fc-profile-header{flex-direction:column;text-align:center}
   .fc-stats-row{grid-template-columns:repeat(2,1fr)}
   .fc-name{font-size:clamp(26px,7vw,42px)}
+}
+
+@media(max-width:640px){
+  .fc-profile-page{padding:16px 12px}
+  .fc-profile-grid{gap:14px}
+  .fc-profile-card{padding:18px 16px;border-radius:16px}
+  .fc-profile-header{gap:16px}
+  .fc-avatar-wrap{width:80px;height:80px}
+  .fc-elo-big{font-size:1.6rem}
+  .fc-stats-row{grid-template-columns:repeat(2,1fr);gap:8px}
+  .fc-stat-box{padding:10px 8px}
+  .fc-stat-val{font-size:1.3rem}
+  .fc-side-card{border-radius:14px;padding:16px}
+  .fc-name{font-size:clamp(18px,5.5vw,32px)!important}
+  .fc-name-wrap{min-width:0;flex:1}
+  .fc-badge-row{flex-wrap:wrap}
 }
 /* ══ END PROFILE REDESIGN ══ */
 
@@ -1733,10 +1749,19 @@ function updateNavUser(){
   const btn=document.getElementById('nav-user-btn');
   if(!btn)return;
   if(user){
-    btn.textContent=user.avatar+' '+user.nick;
-    // Update new profile avatar
-    const avInner2=document.getElementById('prof-av');
-    if(avInner2&&user.avatar)avInner2.innerHTML=`<span style="font-size:2.8rem">${user.avatar}</span>`;
+    // Check for custom avatar image
+    var savedImg=null;try{savedImg=localStorage.getItem('fc_avatar_img');}catch(e){}
+    if(savedImg){
+      btn.innerHTML='<img src="'+savedImg+'" style="width:22px;height:22px;border-radius:50%;object-fit:cover;margin-right:6px;vertical-align:middle"> '+escHtml(user.nick);
+      var avInner2=document.getElementById('prof-av');
+      if(avInner2)avInner2.innerHTML='<img src="'+savedImg+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    } else {
+      var dispAv=(user.avatar&&!user.avatar.startsWith('['))?user.avatar:'';
+      btn.textContent=(dispAv?dispAv+' ':'')+user.nick;
+      var avInner2=document.getElementById('prof-av');
+      var defSvg='<svg viewBox="0 0 80 80" width="44" height="44" fill="none"><circle cx="40" cy="28" r="16" fill="rgba(255,43,43,.22)" stroke="rgba(255,43,43,.4)" stroke-width="1.5"/><path d="M12 70c0-15.464 12.536-28 28-28s28 12.536 28 28" stroke="rgba(255,43,43,.4)" stroke-width="1.5" fill="rgba(255,43,43,.08)"/></svg>';
+      if(avInner2)avInner2.innerHTML=dispAv?('<span style="font-size:2.8rem">'+dispAv+'</span>'):defSvg;
+    }
     btn.onclick=()=>go('profile');
   } else {
     btn.textContent='Sign In';
@@ -3710,25 +3735,33 @@ function handleAvatarUpload(e){
   var reader=new FileReader();
   reader.onload=function(ev){
     var dataUrl=ev.target.result;
-    try{localStorage.setItem('fc_avatar_img',dataUrl);}catch(err){showToast('Storage full');return;}
-    var preview=document.getElementById('profile-av-preview');
-    if(preview)preview.innerHTML='<img src="'+dataUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
-    var avInner=document.getElementById('prof-av');
-    if(avInner)avInner.innerHTML='<img src="'+dataUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
-    if(user)user.avatar='[photo]';
+    try{localStorage.setItem('fc_avatar_img',dataUrl);}catch(err){showToast('Storage full - try smaller image');return;}
+    applyAvatarImage(dataUrl);
     lsSave();showToast('Avatar updated!');
   };
   reader.readAsDataURL(file);
 }
 
+function applyAvatarImage(dataUrl){
+  if(!dataUrl)return;
+  var imgTag='<img src="'+dataUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+  var avInner=document.getElementById('prof-av');
+  if(avInner)avInner.innerHTML=imgTag;
+  var preview=document.getElementById('profile-av-preview');
+  if(preview)preview.innerHTML=imgTag;
+  // Update navbar with small avatar
+  var navBtn=document.getElementById('nav-user-btn');
+  if(navBtn&&user){
+    navBtn.innerHTML='<img src="'+dataUrl+'" style="width:22px;height:22px;border-radius:50%;object-fit:cover;margin-right:6px;vertical-align:middle"> '+escHtml(user.nick);
+  }
+}
+
+function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
 function loadAvatarImage(){
   try{
     var img=localStorage.getItem('fc_avatar_img');
-    if(!img)return;
-    var avInner=document.getElementById('prof-av');
-    if(avInner)avInner.innerHTML='<img src="'+img+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
-    var preview=document.getElementById('profile-av-preview');
-    if(preview)preview.innerHTML='<img src="'+img+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    if(img)applyAvatarImage(img);
   }catch(e){}
 }
 
