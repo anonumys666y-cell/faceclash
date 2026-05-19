@@ -1816,7 +1816,7 @@ function syncProfile(){
   const lEl=document.getElementById('ss-l');if(lEl)lEl.textContent=sLoss;
   const wrEl=document.getElementById('ss-wr');if(wrEl)wrEl.textContent=(sWins+sLoss>0?Math.round(sWins/(sWins+sLoss)*100)+'%':'—');
   // Edit nick prefill
-  const nickInp=document.getElementById('edit-nick');if(nickInp&&!nickInp.value)nickInp.value=user.nick;
+  const nickInp=document.getElementById('edit-nick');if(nickInp)nickInp.value=user.nick||'';
 
   // Trophy wall & frame
   buildTrophyWall();
@@ -1874,11 +1874,17 @@ function setProfileAv(a){
 
 function saveProfile(){
   if(!user)return;
-  const nick=document.getElementById('edit-nick');
-  if(!nick||!nick.value.trim())return;
-  user.nick=nick.value.trim();
-  syncProfile();updateNavUser();lsSave();
-  dbGetOrCreatePlayer(user.nick,user.avatar).catch(()=>{});
+  const nickEl=document.getElementById('edit-nick');
+  const newNick=(nickEl&&nickEl.value.trim())||user.nick||'Player';
+  if(!newNick)return;
+  user.nick=newNick;
+  // Save nickname separately for extra reliability
+  try{localStorage.setItem('fc_nickname',newNick);}catch(e){}
+  syncProfile();
+  updateNavUser();
+  lsSave();
+  // Update Supabase in background
+  dbGetOrCreatePlayer(user.nick,user.avatar,user.google_id||null).catch(()=>{});
   showToast('Profile saved! ✓');
 }
 
@@ -3304,7 +3310,10 @@ function lsLoad(){
     const u=localStorage.getItem('fc_user');
     if(u){
       const p=JSON.parse(u);
-      user={nick:p.nick,avatar:p.avatar,elo:p.elo||800,wins:p.wins||0,losses:p.losses||0,google_id:p.google_id||null,email:p.email||null};
+      // Prefer fc_nickname key (set by saveProfile) over fc_user nick
+      var savedNick=null;try{savedNick=localStorage.getItem('fc_nickname');}catch(e){}
+      var finalNick=savedNick||p.nick||'Player';
+      user={nick:finalNick,avatar:p.avatar,elo:p.elo||800,wins:p.wins||0,losses:p.losses||0,google_id:p.google_id||null,email:p.email||null};
       sElo=p.elo||800;sWins=p.wins||0;sLoss=p.losses||0;
       updateNavUser();syncProfile();
       document.getElementById('ss-e').textContent=sElo.toLocaleString();
@@ -3315,11 +3324,18 @@ function lsLoad(){
         if(db){
           db.from('players').select('elo,wins,losses').eq('nick',p.nick).single().then(r=>{
             if(r.data){
+              // Only update ELO/stats from Supabase — never overwrite nick
               sElo=r.data.elo||800;sWins=r.data.wins||0;sLoss=r.data.losses||0;
               user.elo=sElo;user.wins=sWins;user.losses=sLoss;
               document.getElementById('ss-e').textContent=sElo.toLocaleString();
               document.getElementById('a-elo').textContent=sElo.toLocaleString()+' ELO';
-              syncProfile();lsSave();
+              // Sync profile stats only — don't re-read nick
+              var profElo=document.getElementById('prof-elo');
+              if(profElo)profElo.textContent=sElo.toLocaleString();
+              var wEl=document.getElementById('ss-w');if(wEl)wEl.textContent=sWins;
+              var lEl=document.getElementById('ss-l');if(lEl)lEl.textContent=sLoss;
+              var wrEl=document.getElementById('ss-wr');if(wrEl)wrEl.textContent=(sWins+sLoss>0?Math.round(sWins/(sWins+sLoss)*100)+'%':'—');
+              lsSave();
             }
           }).catch(()=>{});
         }
